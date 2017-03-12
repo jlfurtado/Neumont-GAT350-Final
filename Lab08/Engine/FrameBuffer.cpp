@@ -409,6 +409,11 @@ namespace Engine
 		return &renderTexture2Id;
 	}
 
+	int * FrameBuffer::GetWidthPtr()
+	{
+		return &width;
+	}
+
 	int FrameBuffer::GetWidth()
 	{
 		return width;

@@ -25,6 +25,7 @@ namespace Engine
 		void UnBind(int viewX, int viewY, int viewWidth, int viewHeight);
 		GLuint * GetTexIdPtr();
 		GLuint * GetTexId2Ptr();
+		int *GetWidthPtr();
 		int GetWidth();
 		int GetHeight();
 

@@ -43,6 +43,7 @@ namespace Engine
 
 		case GL_INT:
 			glUniform1i(m_uniformDataLoc, *reinterpret_cast<int*>(m_pUniformData));
+			if (m_logForThis) { GameLogger::Log(MessageType::ConsoleOnly, "Passed %d to uniform [%d]\n", *reinterpret_cast<int*>(m_pUniformData), m_uniformDataLoc); }
 			break;
 
 		case GL_FLOAT_VEC4:

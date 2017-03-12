@@ -108,21 +108,9 @@ int hairLengthLoc;
 Engine::Vec3 triangleColor(1.0f, 0.0f, 0.0f);
 Engine::Vec3 faceNormalColor(0.0f, 1.0f, 0.0f);
 Engine::Vec3 vertexNormalColor(0.0f, 0.0f, 1.0f);
+Engine::Vec3 edgeColor(1.0f, 1.0f, 1.0f);
 int vColorLoc, fColorLoc;
 
-int cycleHairMode = 0;
-int cycleHairModeLoc;
-
-float explodeDist = 0.0f;
-int explodeDistLoc;
-
-Engine::Mat4 shadowMatrix;
-int shadowMatrixLoc;
-
-int bufferTexID;
-Engine::FrameBuffer volumetricBuffer;
-
-int geomSubIndex = 0;
 int fragSubIndex = 0;
 Engine::Mat4 identity;
 
@@ -151,26 +139,7 @@ Engine::Vec3 gravity;
 int gravityLoc;
 Engine::Vec3 darginVelocity;
 int darginVelLoc;
-bool drawDemoQuads = false;
-int instanceCycleIndex = 0;
-Engine::InstanceBuffer instanceBuffer;
-
-int numRows = 10;
-int numColumns = 10;
-int rowsLoc;
-int columnsLoc;
-float width = 0.5f;
-float height = 0.5f;
-int widthLoc;
-int heightLoc;
-
-Engine::Vec3 rowColor(1.0f);
-Engine::Vec3 columnColor(0.0f);
-int rowColLoc;
-int colColLoc;
-
-const int instanceCycles = 3;
-Engine::InstanceBuffer asteroids;
+int radius = 2; // >= 2 plz
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -362,9 +331,7 @@ void EngineDemo::Update(float dt)
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
 	m_demoObjects[NUM_DARGONS_TOTAL].CalcFullTransform();
 
-	framebufferLookAt = fbCam.GetWorldToViewMatrix();
-
-	shadowMatrix = Engine::Mat4::Bias() * (framebufferPerspective * framebufferLookAt);
+	framebufferLookAt = playerCamera.GetWorldToViewMatrix();
 
 	//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "fractalSeed : (%.3f, %.3f)\n", fractalSeed.GetX(), fractalSeed.GetY()); // Amazingly useful for debugging fractal shader
 	shaderOffset += step * dt; if (shaderOffset > maxBorder) { shaderOffset = maxBorder; step *= -1.0f; } if (shaderOffset < minBorder) { shaderOffset = minBorder; step *= -1.0f; }
@@ -394,62 +361,37 @@ void EngineDemo::Draw()
 	// Clear window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	m_demoObjects[3].SetEnabled(false);
-	m_demoObjects[2].SetEnabled(false);
-	m_demoObjects[1].SetEnabled(false);
-	Engine::RenderEngine::Draw();
-	m_demoObjects[1].SetEnabled(true);
-	m_demoObjects[2].SetEnabled(true);
-	m_demoObjects[3].SetEnabled(true);
-
-	glEnable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[1]);
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
-
-	if (drawDemoQuads)
+	if (!plane)
 	{
-		if (instanceCycleIndex == 0)
-		{
-			Engine::RenderEngine::DrawInstanced(&m_demoObjects[2], &instanceBuffer);
-		}
-		else if (instanceCycleIndex == 1)
-		{
-			Engine::RenderEngine::DrawInstanced(&m_demoObjects[3], numRows * numColumns);
-		}
-		else if (instanceCycleIndex == 2)
-		{
-			Engine::RenderEngine::DrawInstanced(&m_demoObjects[4], numRows * numColumns);
-		}
-	}
+		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
+		Engine::RenderEngine::Draw();
+		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
 
-	Engine::RenderEngine::DrawInstanced(&m_demoObjects[5], &asteroids);
-
-
-
-	/*if (plane)
-	{
-		eyeLightVal = playerCamera.GetWorldToViewMatrix() * m_lights[1].GetPos();
-		screenToTexWidth = (float)framebufferWidth / m_pWindow->width();
-		screenToTexHeight = (float)framebufferHeight / m_pWindow->height();
-		persp = Engine::Mat4::InfinitePerspective(m_perspective.GetFOVY(), m_perspective.GetAspectRatio(), m_perspective.GetNearDist());
-
-		PassOneVolumetric();
-		PassTwoVolumetric();
-		PassThreeVolumetric();
-
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_lights[1]);
+		// draw fps text
+		m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+		m_EngineDemoInfoObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 	}
 	else
 	{
-		PassOneRegular();
-		PassTwoRegular();
-		glClearStencil(0);
+		pCurrentBuffer->Bind();
 
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_lights[0]);
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL]);
-	}*/
+		// draw fps text
+		m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+		m_EngineDemoInfoObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+
+		m_grid.SetEnabled(false);
+		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
+		Engine::RenderEngine::Draw();
+		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
+		m_grid.SetEnabled(true);
+
+		screenToTexWidth = (float)framebufferWidth / m_pWindow->width();
+		screenToTexHeight = (float)framebufferHeight / m_pWindow->height();
+
+		pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
+
+		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
+	}
 
 
 	// draw fps text
@@ -526,10 +468,6 @@ bool EngineDemo::InitializeGL()
 
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
-
-	// TODO: enable and disable!?!?!
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 	glClearStencil(0);
@@ -612,8 +550,8 @@ bool EngineDemo::InitializeGL()
 
 	if (m_shaderPrograms[9].Initialize())
 	{					 
-		m_shaderPrograms[9].AddVertexShader("..\\Data\\Shaders\\PhongPhong.vert.shader");
-		m_shaderPrograms[9].AddFragmentShader("..\\Data\\Shaders\\PhongPhong.frag.shader");
+		m_shaderPrograms[9].AddVertexShader("..\\Data\\Shaders\\EdgeDetection.vert.shader");
+		m_shaderPrograms[9].AddFragmentShader("..\\Data\\Shaders\\EdgeDetection.frag.shader");
 		m_shaderPrograms[9].LinkProgram();
 		m_shaderPrograms[9].UseProgram();
 	}
@@ -639,10 +577,10 @@ bool EngineDemo::InitializeGL()
 	//subThreeIndex = m_shaderPrograms[3].GetSubroutineIndex(GL_FRAGMENT_SHADER, "PhongWithShadowAverage");
 	//edgeSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_GEOMETRY_SHADER, "DoEdges");
 	//passSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_GEOMETRY_SHADER, "PassThrough");
-	//finalSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_FRAGMENT_SHADER, "FinalPass");
-	//shadeSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_FRAGMENT_SHADER, "Shade");
+	finalSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "FinalPass");
+	shadeSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "Shade");
 	//doNothingFragSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_FRAGMENT_SHADER, "DoNothing");
-	//eyeLightPosLoc = m_shaderPrograms[4].GetUniformLocation("eyeLightPos");
+	//eyeLightPosLoc = m_shaderPrograms[9].GetUniformLocation("eyeLightPos");
 
 
 	//directionalPositionLoc = m_shaderPrograms[3].GetUniformLocation("objectCenterPosition_WorldSpace");
@@ -674,13 +612,6 @@ bool EngineDemo::InitializeGL()
 	lifeTimeLoc = m_shaderPrograms[5].GetUniformLocation("uParticleLifetime");
 	gravityLoc = m_shaderPrograms[5].GetUniformLocation("uGravity");
 	//darginVelLoc = m_shaderPrograms[5].GetUniformLocation("velocityOffset");
-
-	widthLoc = m_shaderPrograms[7].GetUniformLocation("width");
-	heightLoc = m_shaderPrograms[7].GetUniformLocation("height");
-	rowsLoc = m_shaderPrograms[7].GetUniformLocation("numRows");
-	columnsLoc = m_shaderPrograms[7].GetUniformLocation("numColumns");
-	rowColLoc = m_shaderPrograms[8].GetUniformLocation("rowColor");
-	colColLoc = m_shaderPrograms[8].GetUniformLocation("columnColor");
 
 	if (Engine::MyGL::TestForError(Engine::MessageType::cFatal_Error, "InitializeGL errors!"))
 	{
@@ -737,15 +668,12 @@ bool EngineDemo::ProcessInput(float dt)
 	if (keyboardManager.KeyWasPressed('`')) { Engine::ConfigReader::pReader->ProcessConfigFile(); }
 	if (keyboardManager.KeyWasPressed('M')) { Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "(%.3f, %.3f, %.3f)\n", playerGraphicalObject.GetPos().GetX(), playerGraphicalObject.GetPos().GetY(), playerGraphicalObject.GetPos().GetZ()); }
 	if (keyboardManager.KeyWasPressed('L')) { Engine::RenderEngine::LogStats(); }
-	if (keyboardManager.KeyWasPressed('N')) { cycleHairMode++; cycleHairMode %= 4; }
 	if (keyboardManager.KeyIsDown(VK_SHIFT)) { lineDelta *= -1.0f; }
 	if (keyboardManager.KeyIsDown('K')) { lineDelta *= 0.1f; }
 	if (keyboardManager.KeyWasPressed('J')) { lineWidth = Engine::MathUtility::Clamp(lineWidth + lineDelta, 0.0f, 6.0f); }
 
 
-	if (keyboardManager.KeyWasPressed('6')) { time = 0.0f; }
-	if (keyboardManager.KeyWasPressed('7')) { drawDemoQuads = !drawDemoQuads; }
-	if (keyboardManager.KeyWasPressed('8')) { instanceCycleIndex = (instanceCycleIndex + 1) % instanceCycles; }
+	if (keyboardManager.KeyWasPressed('6')) { plane = !plane; }
 
 	//if (keyboardManager.KeyWasPressed('0')) { HandleBitKeys(0); }
 	//if (keyboardManager.KeyWasPressed('2')) { HandleBitKeys(2); }
@@ -860,118 +788,6 @@ void EngineDemo::DoStencilThingTwo()
 
 }
 
-void EngineDemo::PassOneRegular()
-{
-	// bind the framebuffer
-	pCurrentBuffer->Bind();
-
-	// record depth only for these draw calls
-	int prev = subTwoIndex;
-	subTwoIndex = subOneIndex;
-
-	glCullFace(GL_FRONT);
-
-	Engine::RenderEngine::DrawSingleObjectDifferently(&m_scenePlanes[0], framebufferPerspective.GetAddress(), framebufferLookAt.GetAddress(), nullptr, worldToViewMatLoc, perspectiveMatLoc, texLoc);
-	Engine::RenderEngine::DrawSingleObjectDifferently(&playerGraphicalObject, framebufferPerspective.GetAddress(), framebufferLookAt.GetAddress(), nullptr, worldToViewMatLoc, perspectiveMatLoc, texLoc);
-
-	for (int i = 0; i < NUM_DARGONS_DEMO1; ++i)
-	{
-		Engine::RenderEngine::DrawSingleObjectDifferently(&m_demoObjects[i], framebufferPerspective.GetAddress(), framebufferLookAt.GetAddress(), nullptr, worldToViewMatLoc, perspectiveMatLoc, texLoc);
-	}
-
-	glCullFace(GL_BACK);
-
-	// go back to normal subroutine
-	subTwoIndex = prev;
-
-	// restore stuff
-	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
-
-}
-
-void EngineDemo::PassTwoRegular()
-{
-	// draw regularish
-	Engine::RenderEngine::DrawSingleObjectRegularly(&m_scenePlanes[0]);
-	Engine::RenderEngine::DrawSingleObjectRegularly(&playerGraphicalObject);
-
-	for (int i = 0; i < NUM_DARGONS_DEMO1; ++i)
-	{
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[i]);
-	}
-}
-
-void EngineDemo::PassOneVolumetric()
-{	
-	// pass one for volumetric
-	volumetricBuffer.Bind();
-
-	// use shade and passthrough
-	geomSubIndex = passSubIndex;
-	fragSubIndex = shadeSubIndex;
-	
-	// TODO INF PERSP!?!?
-
-	Engine::RenderEngine::DrawSingleObjectRegularly(&m_scenePlanes[1]);
-
-	for (int i = NUM_DARGONS_DEMO1; i < NUM_DARGONS_TOTAL; ++i)
-	{
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[i]);
-	}
-
-}
-
-void EngineDemo::PassTwoVolumetric()
-{
-	// pass two for volumetric
-
-	DoFramebufferThing(volumetricBuffer.GetWidth(), volumetricBuffer.GetHeight(), m_pWindow->width(), m_pWindow->height(), *volumetricBuffer.GetTexIdPtr());
-	DontDepthThisPass();
-	volumetricBuffer.UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
-	
-	glEnable(GL_STENCIL_TEST);
-	glClear(GL_STENCIL_BUFFER_BIT);
-	glClearStencil(0);
-
-	DoStencilThing();
-	
-	geomSubIndex = edgeSubIndex;
-	fragSubIndex = doNothingFragSubIndex;
-	
-	//Engine::RenderEngine::DrawSingleObjectRegularly(&m_scenePlanes[1]);
-	
-	for (int i = NUM_DARGONS_DEMO1; i < NUM_DARGONS_TOTAL; ++i)
-	{
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[i]);
-	}
-	
-	DoColorThisPass();
-	
-}
-
-void EngineDemo::PassThreeVolumetric()
-{
-	glDisable(GL_DEPTH_TEST);
-	DoBlend();
-
-	// Pass three
-	DoStencilThingTwo();
-
-	// pass throgh the geometry, and draw to a plane
-	geomSubIndex = passSubIndex;
-	fragSubIndex = finalSubIndex;
-
-	// draw the near plane plane
-	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
-
-	DontBlend();
-	glEnable(GL_DEPTH_TEST);
-
-	glDepthMask(GL_TRUE);
-	glDisable(GL_STENCIL_TEST);
-	glEnable(GL_DEPTH_TEST);
-}
-
 void EngineDemo::DoBlend()
 {
 	glEnable(GL_BLEND);
@@ -995,11 +811,13 @@ bool EngineDemo::UglyDemoCode()
 	//playerGraphicalObject.AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &subTwoIndex, 1));
 	//playerGraphicalObject.AddUniformData(Engine::UniformData(GL_TEXTURE0, &bufferTexID, brickLoc));
 	//playerGraphicalObject.AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &shadowMatrix, shadowMatrixLoc, true));
+	playerGraphicalObject.AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &shadeSubIndex, 1));
+	playerGraphicalObject.AddUniformData(Engine::UniformData(GL_INT, &numCelLevels, 18));
 
 	playerGraphicalObject.GetMatPtr()->m_specularIntensity = 32.0f;
-	playerGraphicalObject.GetMatPtr()->m_ambientReflectivity = Engine::Vec3(0.1f);
-	playerGraphicalObject.GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(0.7f);
-	playerGraphicalObject.GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.1f);
+	playerGraphicalObject.GetMatPtr()->m_ambientReflectivity = Engine::Vec3(0.0f, 0.1f, 0.0f);
+	playerGraphicalObject.GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(0.0f, 0.7f, 0.0f);
+	playerGraphicalObject.GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.0f, 0.1f, 0.0f);
 	playerGraphicalObject.SetScaleMat(Engine::Mat4::Scale(1.0f));
 	playerGraphicalObject.SetTransMat(Engine::Mat4::Translation(Engine::Vec3(375.0f, 5.0f, 5.0f)));
 	Engine::RenderEngine::AddGraphicalObject(&playerGraphicalObject);
@@ -1023,18 +841,12 @@ bool EngineDemo::UglyDemoCode()
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));
 	Engine::MousePicker::SetPerspectiveInfo(m_perspective.GetFOVY(), m_perspective.GetNearDist(), m_perspective.GetWidth(), m_perspective.GetHeight());
 
-	if (!nearestBuffer.InitializeForDepth(framebufferWidth, framebufferHeight, true)) { return false; }
-	if (!linearBuffer.InitializeForDepth(framebufferWidth, framebufferHeight, false)) { return false; }
+	if (!nearestBuffer.InitializeForTexture(framebufferWidth, framebufferHeight)) { return false; }
 	Engine::Perspective p;
 	p.SetPerspective(framebufferAspect, Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	framebufferPerspective = p.GetPerspective();
-	fbCam.SetPosition(Engine::Vec3(0.0f, LIGHT_HEIGHT, 0.0f));
-	fbCam.MouseRotate(0, 0);
-
-	if (!volumetricBuffer.InitializeForShadows(framebufferWidth, framebufferHeight)) { return false; }
 
 	pCurrentBuffer = &nearestBuffer;
-	bufferTexID = *pCurrentBuffer->GetTexIdPtr();
 
 	/*Engine::ShapeGenerator::MakeSphere(&framebufferCamera, Engine::Vec3(0.0f, 1.0f, 0.0f));
 	framebufferCamera.SetTransMat(Engine::Mat4::Translation(fbCam.GetPosition()));
@@ -1043,7 +855,6 @@ bool EngineDemo::UglyDemoCode()
 	framebufferCamera.AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
 	Engine::RenderEngine::AddGraphicalObject(&framebufferCamera);*/
 
-	framebufferLookAt = fbCam.GetWorldToViewMatrix();
 	whiteSquareId = Engine::BitmapLoader::SetupWhitePixel();
 
 	Engine::ShapeGenerator::MakeGrid(&m_grid, Engine::CollisionTester::GetGridWidthSections(), Engine::CollisionTester::GetGridHeightSections(), Engine::Vec3(0.5f));
@@ -1055,7 +866,7 @@ bool EngineDemo::UglyDemoCode()
 	m_grid.AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_grid.GetMatPtr()->m_materialColor, tintColorLoc));
 	m_grid.AddUniformData(Engine::UniformData(GL_FLOAT, &m_grid.GetMatPtr()->m_specularIntensity, tintIntensityLoc));
 	
-	Engine::ShapeGenerator::MakeTessalatedPlane(&m_demoObjects[0], Engine::Vec3(-50.0f, 0.0f, -50.0f), Engine::Vec3(50.0f, 0.0f, 50.0f), Engine::Vec3(250, 0, 250), m_shaderPrograms[4].GetProgramId());
+	/*Engine::ShapeGenerator::MakeTessalatedPlane(&m_demoObjects[0], Engine::Vec3(-50.0f, 0.0f, -50.0f), Engine::Vec3(50.0f, 0.0f, 50.0f), Engine::Vec3(25, 0, 25), m_shaderPrograms[4].GetProgramId());
 	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[0]);
 	m_demoObjects[0].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr()->GetAddress(),
 		tintColorLoc, diffuseColorLoc, ambientColorLoc, specularColorLoc, specularPowerLoc, diffuseIntensityLoc, ambientIntensityLoc, specularIntensityLoc,
@@ -1077,129 +888,139 @@ bool EngineDemo::UglyDemoCode()
 	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_VEC4, &lineColor, lineColorLoc));
 	wavenumber = 2 * Engine::MathUtility::PI / 10.0f;
 	velocity = 2.0f;
-	amplitude = 2.0f;
+	amplitude = 2.0f;*/
 
-	Engine::ShapeGenerator::CreatePoints(&m_demoObjects[1], 25000, 0.0f, Engine::MathUtility::ToRadians(30.0f), 0.0f, Engine::MathUtility::ToRadians(360.0f), 12.0f, 15.0f, 0.00035f, m_shaderPrograms[5].GetProgramId());
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[1]);
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[1].GetFullTransformPtr(), modelToWorldMatLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &halfWidth, halfWidthLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_TEXTURE0, &texID, texLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &lifeTime, lifeTimeLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &gravity, gravityLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &darginVelocity, darginVelLoc));
-	m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &time, timeLoc));
-	gravity = Engine::Vec3(0.0f, -1.5f, 0.0f);
-	halfWidth = 1.0f;
-	lifeTime = 5.0f;
-	time = 0.0f;
-	texID = Engine::BitmapLoader::LoadTexture("..\\Data\\Textures\\fire.bmp");
+	//Engine::ShapeGenerator::CreatePoints(&m_demoObjects[1], 2500, 0.0f, Engine::MathUtility::ToRadians(30.0f), 0.0f, Engine::MathUtility::ToRadians(360.0f), 12.0f, 15.0f, 0.00035f, m_shaderPrograms[5].GetProgramId());
+	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[1]);
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[1].GetFullTransformPtr(), modelToWorldMatLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &halfWidth, halfWidthLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_TEXTURE0, &texID, texLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &lifeTime, lifeTimeLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &gravity, gravityLoc));
+	////m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &darginVelocity, darginVelLoc));
+	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &time, timeLoc));
+	//gravity = Engine::Vec3(0.0f, -1.5f, 0.0f);
+	//halfWidth = 1.0f;
+	//lifeTime = 5.0f;
+	//time = 0.0f;
+	//texID = Engine::BitmapLoader::LoadTexture("..\\Data\\Textures\\fire.bmp");
 
-	Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[2], m_shaderPrograms[6].GetProgramId());
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[2]);
+	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[2], m_shaderPrograms[6].GetProgramId());
+	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[2]);
 
-	Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[3], m_shaderPrograms[7].GetProgramId());
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[3]);
-	m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
-	m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
-	m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
-	m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
+	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[3], m_shaderPrograms[7].GetProgramId());
+	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[3]);
+	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
+	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
+	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
+	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
 
-	Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[4], m_shaderPrograms[8].GetProgramId());
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[4]);
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &rowColor, rowColLoc));
-	m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &columnColor, colColLoc));
+	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[4], m_shaderPrograms[8].GetProgramId());
+	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[4]);
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &rowColor, rowColLoc));
+	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &columnColor, colColLoc));
 
-	int objectsX = 10;
-	int objectsY = 10;
-	int howManyObjects = objectsX * objectsY;
-	float *pD = new float[howManyObjects * 3];
-	
-	for (int i = 0; i < howManyObjects * 3; i += 3)
-	{
-		float x = (float)((i/6) % objectsX);
-		float y = (float)((i/6) / objectsY);
-		pD[i + 0] = 1.0f - (2.0f * x / objectsX);
-		pD[i + 1] = 1.0f - (4.0f * y / objectsY); 
-		pD[i + 2] = 0.1f;
-	}
-
+	//int objectsX = 10;
+	//int objectsY = 10;
+	//int howManyObjects = objectsX * objectsY;
+	//float *pD = new float[howManyObjects * 3];
+	//
 	//for (int i = 0; i < howManyObjects * 3; i += 3)
 	//{
-	//	Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "%.3f, %.3f, %.3f\n", pD[i], pD[i+1], pD[i+2]);
+	//	float x = (float)((i/6) % objectsX);
+	//	float y = (float)((i/6) / objectsY);
+	//	pD[i + 0] = 1.0f - (2.0f * x / objectsX);
+	//	pD[i + 1] = 1.0f - (4.0f * y / objectsY); 
+	//	pD[i + 2] = 0.1f;
 	//}
 
-	instanceBuffer.Initialize(pD, 3*sizeof(float), howManyObjects, 3);
+	////for (int i = 0; i < howManyObjects * 3; i += 3)
+	////{
+	////	Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "%.3f, %.3f, %.3f\n", pD[i], pD[i+1], pD[i+2]);
+	////}
 
-	delete[] pD;
+	//instanceBuffer.Initialize(pD, 3*sizeof(float), howManyObjects, 3);
 
-	Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\Dargon.PT.scene", &m_demoObjects[5], m_shaderPrograms[3].GetProgramId(), "..\\Data\\Textures\\DargonSkin.bmp");
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[5]);
-	m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[5].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
-	m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	m_demoObjects[5].AddUniformData(Engine::UniformData(GL_TEXTURE0, m_demoObjects[5].GetMeshPointer()->GetTextureIDPtr(), texLoc));
-	m_demoObjects[5].SetRotationAxis(Engine::Vec3(0.4f, 0.6f, 0.8f));
-	m_demoObjects[5].SetRotationRate(Engine::MathUtility::ToRadians(18.0f));
+	//delete[] pD;
 
-	GLuint amount = 100;
-	Engine::Mat4* modelMatrices;
-	modelMatrices = new Engine::Mat4[amount]{ Engine::Mat4() };
-	GLfloat radius = 500.0f;
-	GLfloat offset = 20.5f;
-	for (GLuint i = 0; i < amount; i++)
-	{
-		Engine::Mat4 model;
+	//Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\Dargon.PT.scene", &m_demoObjects[5], m_shaderPrograms[3].GetProgramId(), "..\\Data\\Textures\\DargonSkin.bmp");
+	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[5]);
+	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[5].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
+	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
+	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
+	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_TEXTURE0, m_demoObjects[5].GetMeshPointer()->GetTextureIDPtr(), texLoc));
+	//m_demoObjects[5].SetRotationAxis(Engine::Vec3(0.4f, 0.6f, 0.8f));
+	//m_demoObjects[5].SetRotationRate(Engine::MathUtility::ToRadians(18.0f));
 
-		GLfloat angle = (GLfloat)i / (GLfloat)amount * 360.0f;
-		GLfloat displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-		GLfloat x = sin(angle) * radius + displacement;
-		displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-		GLfloat y = displacement * 0.4f; // y value has smaller displacement
-		displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-		GLfloat z = cos(angle) * radius + displacement;
-		model = model * Engine::Mat4::Translation(Engine::Vec3(x, y, z));
+	//GLuint amount = 10;
+	//Engine::Mat4* modelMatrices;
+	//modelMatrices = new Engine::Mat4[amount]{ Engine::Mat4() };
+	//GLfloat radius = 500.0f;
+	//GLfloat offset = 20.5f;
+	//for (GLuint i = 0; i < amount; i++)
+	//{
+	//	Engine::Mat4 model;
 
-		GLfloat scale = (rand() % 20) / 100.0f + 0.05f;
-		model = model * Engine::Mat4::Scale(scale * 50.0f);
+	//	GLfloat angle = (GLfloat)i / (GLfloat)amount * 360.0f;
+	//	GLfloat displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
+	//	GLfloat x = sin(angle) * radius + displacement;
+	//	displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
+	//	GLfloat y = displacement * 0.4f; // y value has smaller displacement
+	//	displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
+	//	GLfloat z = cos(angle) * radius + displacement;
+	//	model = model * Engine::Mat4::Translation(Engine::Vec3(x, y, z));
 
-		GLfloat rotAngle = (float)(rand() % 360);
-		model = model * Engine::Mat4::RotationAroundAxis(Engine::Vec3(0.4f, 0.6f, 0.8f), rotAngle);
-		
-		modelMatrices[i] = model;
-	}
+	//	GLfloat scale = (rand() % 20) / 100.0f + 0.05f;
+	//	model = model * Engine::Mat4::Scale(scale * 50.0f);
 
-	asteroids.Initialize(modelMatrices, 16*sizeof(float), amount, 16 * amount);
+	//	GLfloat rotAngle = (float)(rand() % 360);
+	//	model = model * Engine::Mat4::RotationAroundAxis(Engine::Vec3(0.4f, 0.6f, 0.8f), rotAngle);
+	//	
+	//	modelMatrices[i] = model;
+	//}
 
-	delete[] modelMatrices;
+	//asteroids.Initialize(modelMatrices, 16*sizeof(float), amount, 16 * amount);
 
-	int i = 0;
-	Engine::ShapeGenerator::MakeLightingCube(&m_lights[i]);
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_lights[i].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, tintColorLoc));
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, debugColorLoc));
-	m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT, &m_lights[i].GetMatPtr()->m_specularIntensity, tintIntensityLoc));
-	m_lights[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3(0.0f, LIGHT_HEIGHT, 0.0f)));
-	m_lights[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
-	m_lights[i].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(1.0f, 1.0f, 1.0f);
-	Engine::RenderEngine::AddGraphicalObject(&m_lights[i]);
+	//delete[] modelMatrices;
+
+	//int i = 0;
+	//Engine::ShapeGenerator::MakeLightingCube(&m_lights[i]);
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_lights[i].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, tintColorLoc));
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, debugColorLoc));
+	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT, &m_lights[i].GetMatPtr()->m_specularIntensity, tintIntensityLoc));
+	//m_lights[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3(0.0f, LIGHT_HEIGHT, 0.0f)));
+	//m_lights[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
+	//m_lights[i].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(1.0f, 1.0f, 1.0f);
+	//Engine::RenderEngine::AddGraphicalObject(&m_lights[i]);
 	//Engine::CollisionTester::AddGraphicalObject(&m_lights[i]);
 
+	Engine::ShapeGenerator::MakeNearPlanePlane(&m_demoObjects[NUM_DARGONS_TOTAL + 1], m_shaderPrograms[9].GetProgramId());
+	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, modelToWorldMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, worldToViewMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, perspectiveMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_demoObjects[NUM_DARGONS_TOTAL + 1].GetMatPtr()->m_materialColor, tintColorLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_TEXTURE0, pCurrentBuffer->GetTexIdPtr(), 33));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &finalSubIndex, 1));
+	//m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &zeroVec, eyeLightPosLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexWidth, 34));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexHeight, 35));
+	//m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_INT, pCurrentBuffer->GetWidthPtr(), 37));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_INT, &radius, 36));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &edgeColor, 40));
+
+	DontBlend();
 
 	return true;
-}
-
-void EngineDemo::SwapFrameBuffers()
-{
-	pCurrentBuffer = ((pCurrentBuffer == &nearestBuffer) ? &linearBuffer : &nearestBuffer);
-	bufferTexID = *pCurrentBuffer->GetTexIdPtr();
 }
 
 void EngineDemo::SwapSubroutineIndex(void **pIndexPtr, int start, int end)

@@ -183,6 +183,8 @@
     <None Include="..\Data\Shaders\Directional.vert.shader" />
     <None Include="..\Data\Shaders\Discard.frag.shader" />
     <None Include="..\Data\Shaders\Discard.vert.shader" />
+    <None Include="..\Data\Shaders\EdgeDetection.frag.shader" />
+    <None Include="..\Data\Shaders\EdgeDetection.vert.shader" />
     <None Include="..\Data\Shaders\Explode.frag.shader" />
     <None Include="..\Data\Shaders\Explode.geom.shader" />
     <None Include="..\Data\Shaders\Explode.vert.shader" />
