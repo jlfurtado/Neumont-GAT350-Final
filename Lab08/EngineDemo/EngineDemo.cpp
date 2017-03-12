@@ -342,7 +342,7 @@ void EngineDemo::Update(float dt)
 	fractalSeed.GetAddress()[1] += fsy.GetX() * dt; if (fractalSeed.GetY() < fsy.GetY()) { fractalSeed.GetAddress()[1] = fsy.GetY(); fsy.GetAddress()[0] *= -1.0f; } if (fractalSeed.GetY() > fsy.GetZ()) { fractalSeed.GetAddress()[1] = fsy.GetZ(); fsy.GetAddress()[0] *= -1.0f; }
 
 	vpm = Engine::Mat4::ViewPort((float)m_pWindow->width(), 0.0f, (float)m_pWindow->height(), 0.0f, RENDER_DISTANCE, m_perspective.GetNearDist());
-
+	Engine::CollisionTester::CalculateGrid();
 }
 
 void EngineDemo::Draw()
@@ -912,8 +912,8 @@ bool EngineDemo::UglyDemoCode()
 		m_demoObjects[i].AddUniformData(Engine::UniformData(GL_INT, &numCelLevels, 18));
 
 		// random fun stuff
-		//m_demoObjects[i].SetRotationAxis(Engine::Vec3(0.0f, 1.0f, 0.0f));
-		//m_demoObjects[i].SetRotationRate((i % DARGONS_PER_ROW + k / DARGONS_PER_ROW) * 1.33f);
+		m_demoObjects[i].SetRotationAxis(Engine::MathUtility::Rand(Engine::Vec3(0.1f), Engine::Vec3(0.7f)));
+		m_demoObjects[i].SetRotationRate(Engine::MathUtility::Rand(0.1f, 1.5f));
 		m_demoObjects[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
 		m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity = Engine::MathUtility::Rand(Engine::Vec3(0.1f), Engine::Vec3(0.7f));
 		m_demoObjects[i].GetMatPtr()->m_ambientReflectivity = 0.2f * m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity;
