@@ -915,7 +915,7 @@ bool EngineDemo::UglyDemoCode()
 		//m_demoObjects[i].SetRotationAxis(Engine::Vec3(0.0f, 1.0f, 0.0f));
 		//m_demoObjects[i].SetRotationRate((i % DARGONS_PER_ROW + k / DARGONS_PER_ROW) * 1.33f);
 		m_demoObjects[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
-		m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(0.0f, 0.0f, 0.9f);
+		m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity = Engine::MathUtility::Rand(Engine::Vec3(0.1f), Engine::Vec3(0.7f));
 		m_demoObjects[i].GetMatPtr()->m_ambientReflectivity = 0.2f * m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity;
 		m_demoObjects[i].GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.0f, 0.0f, 0.0f);
 		m_demoObjects[i].GetMatPtr()->m_specularIntensity = 16.0f;
