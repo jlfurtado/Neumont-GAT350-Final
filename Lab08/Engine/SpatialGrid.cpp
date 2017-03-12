@@ -14,7 +14,7 @@
 
 namespace Engine
 {
-	const float SPATIAL_GRID_SIZE = 50.0f;
+	const float SPATIAL_GRID_SIZE = 10.0f;
 	SpatialGrid::SpatialGrid()
 		: m_gridScale(SPATIAL_GRID_SIZE)
 	{

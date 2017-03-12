@@ -114,7 +114,6 @@ int vColorLoc, fColorLoc;
 int fragSubIndex = 0;
 Engine::Mat4 identity;
 
-bool plane = false;
 Engine::Vec3 eyeLightVal;
 int eyeLightPosLoc;
 Engine::Vec3 zeroVec(0.0f);
@@ -303,10 +302,9 @@ void EngineDemo::Update(float dt)
 	static Engine::GraphicalObject *s_pSelected = nullptr;
 	bool thisFrame = false;
 
-	if (plane && Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
+	if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
 	{
 		Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
-		if (rco.m_didIntersect) { Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "OHMYGOSHURMOUSINGOVER THE DARGON\n"); }
 	}
 	
 
@@ -352,48 +350,27 @@ void EngineDemo::Draw()
 	// Clear window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if (!plane)
-	{
-		m_perspective.SetScreenDimmensions(m_pWindow->width(), m_pWindow->height());
-		m_perspective.SetAspectRatio((m_pWindow->width() / 1.0f) / m_pWindow->height());
+	m_perspective.SetScreenDimmensions(m_pWindow->width() / 2, m_pWindow->height());
+	m_perspective.SetAspectRatio((m_pWindow->width() / 2.0f) / m_pWindow->height());
+	pCurrentBuffer->Bind();
 
-		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(false);
-		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
-		Engine::RenderEngine::Draw();
-		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
-		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(true);
-	}
-	else
-	{
-		m_perspective.SetScreenDimmensions(m_pWindow->width() / 2, m_pWindow->height());
-		m_perspective.SetAspectRatio((m_pWindow->width() / 2.0f) / m_pWindow->height());
-		pCurrentBuffer->Bind();
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
+	m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(false);
+	Engine::RenderEngine::Draw();
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
+	m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(true);
 
-		m_grid.SetEnabled(false);
-		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
-		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(false);
-		Engine::RenderEngine::Draw();
-		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
-		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(true);
-		m_grid.SetEnabled(true);
+	screenToTexWidth = (float)framebufferWidth / ( m_pWindow->width() / 2.0f);
+	screenToTexHeight = (float)framebufferHeight / m_pWindow->height();
+	leftOffset = Engine::Vec2(0.0f);
+	rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
 
-		screenToTexWidth = (float)framebufferWidth / ( m_pWindow->width() / 2.0f);
-		screenToTexHeight = (float)framebufferHeight / m_pWindow->height();
-		leftOffset = Engine::Vec2(0.0f);
-		rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
-
-		pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
-
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
-		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL]);
-
-
-	}
-
-
-	// draw fps text
 	m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
-	m_EngineDemoInfoObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+
+	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
+
+	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
+	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL]);
 }
 
 void EngineDemo::OnResizeWindow()
@@ -670,9 +647,6 @@ bool EngineDemo::ProcessInput(float dt)
 	if (keyboardManager.KeyIsDown('K')) { lineDelta *= 0.1f; }
 	if (keyboardManager.KeyWasPressed('J')) { lineWidth = Engine::MathUtility::Clamp(lineWidth + lineDelta, 0.0f, 6.0f); }
 
-
-	if (keyboardManager.KeyWasPressed('6')) { plane = !plane; }
-
 	//if (keyboardManager.KeyWasPressed('0')) { HandleBitKeys(0); }
 	//if (keyboardManager.KeyWasPressed('2')) { HandleBitKeys(2); }
 	//if (keyboardManager.KeyWasPressed('3')) { HandleBitKeys(3); }
@@ -802,7 +776,6 @@ bool EngineDemo::UglyDemoCode()
 	player.SetName("Player");
 	player.AddComponent(&playerSpatial, "PlayerSpatial");
 	Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.scene", &playerGraphicalObject, m_shaderPrograms[9].GetProgramId());
-	Engine::CollisionTester::AddGraphicalObject(&playerGraphicalObject);
 	playerGraphicalObject.AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr()->GetAddress(),
 		tintColorLoc, diffuseColorLoc, ambientColorLoc, specularColorLoc, specularPowerLoc, diffuseIntensityLoc, ambientIntensityLoc, specularIntensityLoc,
 		&playerGraphicalObject.GetMatPtr()->m_materialColor, cameraPosLoc, playerCamera.GetPosPtr(), lightLoc, m_lights[0].GetLocPtr());
@@ -833,8 +806,8 @@ bool EngineDemo::UglyDemoCode()
 		return false;
 	}
 
-	m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "FPS not calculated yet!\n");
-	m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
+	m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "FPS not calculated yet!\n");
+	m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
 	m_perspective.SetPerspective(m_pWindow->width() / static_cast<float>(m_pWindow->height()), Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));
 	Engine::MousePicker::SetPerspectiveInfo(m_perspective.GetFOVY(), m_perspective.GetNearDist(), m_perspective.GetWidth(), m_perspective.GetHeight());
