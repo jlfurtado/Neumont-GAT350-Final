@@ -48,7 +48,7 @@ const float SCENE_PLANE_SCALE = 10.0f;
 const int NUM_USED_SHADERS = 10;
 const int NUM_NON_TEAPOT_SHADERS = 4;
 const int TEAPOTS_PER_SHADER = 3;
-const int NUM_DARGONS_TOTAL = NUM_DARGONS_DEMO1 + NUM_DRAGONS_DEMO2;
+const int NUM_DARGONS_TOTAL = NUM_DARGONS_DEMO1;
 const int NUM_DEMO_OBJECTS = NUM_DARGONS_TOTAL + 2;
 const float TEAPOT_DISTANCE = 35.0f;
 const float ROTATE_DISTANCE = TEAPOT_DISTANCE / 2.5f;
@@ -285,17 +285,6 @@ void EngineDemo::Update(float dt)
 		m_demoObjects[i].SetRotation(m_demoObjects[i].GetRotation() + dt * m_demoObjects[i].GetRotationRate());
 		m_demoObjects[i].SetRotMat(Engine::Mat4::RotationAroundAxis(m_demoObjects[i].GetRotationAxis(), m_demoObjects[i].GetRotation()));
 
-		/*if (i >= 4 && i <= 6)
-		{
-			Engine::Vec3 xyz = Engine::Vec3(i % 3 == 2 ? 1.0f : 0.0f,
-				i % 3 == 0 ? 1.0f : 0.0f,
-				i % 3 == 1 ? 1.0f : 0.0f);
-			Engine::Vec3 teapotPos = m_demoObjects[5].GetPos();
-				m_lights[i].SetRotation(m_lights[i].GetRotation() + m_lights[i].GetRotationRate() * dt);
-			Engine::Mat4 rotationAroundAxis = Engine::Mat4::RotationAroundAxis(m_lights[i].GetRotationAxis(), m_lights[i].GetRotation());
-			m_lights[i].SetTransMat(Engine::Mat4::Translation(teapotPos + (ROTATE_DISTANCE * (rotationAroundAxis * xyz))));
-		}*/
-
 		m_lights[i].CalcFullTransform();
 		m_demoObjects[i].CalcFullTransform();
 	}
@@ -321,30 +310,12 @@ void EngineDemo::Update(float dt)
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
 	m_demoObjects[NUM_DARGONS_TOTAL].CalcFullTransform();
 
-	framebufferLookAt = playerCamera.GetWorldToViewMatrix();
-
 	//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "fractalSeed : (%.3f, %.3f)\n", fractalSeed.GetX(), fractalSeed.GetY()); // Amazingly useful for debugging fractal shader
 	shaderOffset += step * dt; if (shaderOffset > maxBorder) { shaderOffset = maxBorder; step *= -1.0f; } if (shaderOffset < minBorder) { shaderOffset = minBorder; step *= -1.0f; }
 	fractalSeed.GetAddress()[0] += fsx.GetX() * dt; if (fractalSeed.GetX() < fsx.GetY()) { fractalSeed.GetAddress()[0] = fsx.GetY(); fsx.GetAddress()[0] *= -1.0f; } if (fractalSeed.GetX() > fsx.GetZ()) { fractalSeed.GetAddress()[0] = fsx.GetZ(); fsx.GetAddress()[0] *= -1.0f; }
 	fractalSeed.GetAddress()[1] += fsy.GetX() * dt; if (fractalSeed.GetY() < fsy.GetY()) { fractalSeed.GetAddress()[1] = fsy.GetY(); fsy.GetAddress()[0] *= -1.0f; } if (fractalSeed.GetY() > fsy.GetZ()) { fractalSeed.GetAddress()[1] = fsy.GetZ(); fsy.GetAddress()[0] *= -1.0f; }
 
 	vpm = Engine::Mat4::ViewPort((float)m_pWindow->width(), 0.0f, (float)m_pWindow->height(), 0.0f, RENDER_DISTANCE, m_perspective.GetNearDist());
-	Engine::Vec3 darginForward = playerGraphicalObject.GetRotMat() * Engine::Vec3(0.0f, 0.0f, -1.0f);
-	Engine::Vec3 darginRight = playerGraphicalObject.GetRotMat() * Engine::Vec3(1.0f, 0.0f, 0.0f);
-	Engine::Vec3 darginUp = playerGraphicalObject.GetRotMat() * Engine::Vec3(0.0f, 1.0f, 0.0f);
-
-	m_demoObjects[1].SetTransMat(Engine::Mat4::Translation(playerGraphicalObject.GetPos() + 5.0f * darginForward + 7.0f * darginUp));
-	Engine::Vec3 up = Engine::Vec3(0.0f, 1.0f, 0.0f);
-	Engine::Mat4 rotationMatrix = Engine::Mat4::RotationAroundAxis(up.Cross(darginForward), Engine::MathUtility::GetVectorAngleRadians(darginForward, up));
-	m_demoObjects[1].SetRotMat(rotationMatrix);
-	m_demoObjects[1].CalcFullTransform();
-
-
-	static Engine::Vec3 lastPos;
-	darginVelocity = (playerGraphicalObject.GetPos() - lastPos) / dt;
-	lastPos = playerGraphicalObject.GetPos();
-
-
 
 }
 
@@ -868,143 +839,6 @@ bool EngineDemo::UglyDemoCode()
 	m_grid.AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
 	m_grid.AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_grid.GetMatPtr()->m_materialColor, tintColorLoc));
 	m_grid.AddUniformData(Engine::UniformData(GL_FLOAT, &m_grid.GetMatPtr()->m_specularIntensity, tintIntensityLoc));
-	
-	/*Engine::ShapeGenerator::MakeTessalatedPlane(&m_demoObjects[0], Engine::Vec3(-50.0f, 0.0f, -50.0f), Engine::Vec3(50.0f, 0.0f, 50.0f), Engine::Vec3(25, 0, 25), m_shaderPrograms[4].GetProgramId());
-	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[0]);
-	m_demoObjects[0].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr()->GetAddress(),
-		tintColorLoc, diffuseColorLoc, ambientColorLoc, specularColorLoc, specularPowerLoc, diffuseIntensityLoc, ambientIntensityLoc, specularIntensityLoc,
-		&m_demoObjects[0].GetMatPtr()->m_materialColor, cameraPosLoc, playerCamera.GetPosPtr(), lightLoc, m_lights[0].GetLocPtr());
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[0].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_demoObjects[0].GetMatPtr()->m_materialColor, tintColorLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &vpm, vpmLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT, &amplitude, ampLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT, &velocity, velLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT, &wavenumber, wavLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT, &time, timeLoc));
-	m_demoObjects[0].GetMatPtr()->m_specularIntensity = 8.0f;
-	m_demoObjects[0].GetMatPtr()->m_ambientReflectivity = Engine::Vec3(0.1f);
-	m_demoObjects[0].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(0.6f);
-	m_demoObjects[0].GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.3f);
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT, &lineWidth, lineWidthLoc));
-	m_demoObjects[0].AddUniformData(Engine::UniformData(GL_FLOAT_VEC4, &lineColor, lineColorLoc));
-	wavenumber = 2 * Engine::MathUtility::PI / 10.0f;
-	velocity = 2.0f;
-	amplitude = 2.0f;*/
-
-	//Engine::ShapeGenerator::CreatePoints(&m_demoObjects[1], 2500, 0.0f, Engine::MathUtility::ToRadians(30.0f), 0.0f, Engine::MathUtility::ToRadians(360.0f), 12.0f, 15.0f, 0.00035f, m_shaderPrograms[5].GetProgramId());
-	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[1]);
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[1].GetFullTransformPtr(), modelToWorldMatLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &halfWidth, halfWidthLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_TEXTURE0, &texID, texLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &lifeTime, lifeTimeLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &gravity, gravityLoc));
-	////m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &darginVelocity, darginVelLoc));
-	//m_demoObjects[1].AddUniformData(Engine::UniformData(GL_FLOAT, &time, timeLoc));
-	//gravity = Engine::Vec3(0.0f, -1.5f, 0.0f);
-	//halfWidth = 1.0f;
-	//lifeTime = 5.0f;
-	//time = 0.0f;
-	//texID = Engine::BitmapLoader::LoadTexture("..\\Data\\Textures\\fire.bmp");
-
-	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[2], m_shaderPrograms[6].GetProgramId());
-	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[2]);
-
-	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[3], m_shaderPrograms[7].GetProgramId());
-	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[3]);
-	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
-	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
-	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
-	//m_demoObjects[3].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
-
-	//Engine::ShapeGenerator::MakeDemoQuad(&m_demoObjects[4], m_shaderPrograms[8].GetProgramId());
-	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[4]);
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &width, widthLoc));
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT, &height, heightLoc));
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numRows, rowsLoc));
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_INT, &numColumns, columnsLoc));
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &rowColor, rowColLoc));
-	//m_demoObjects[4].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &columnColor, colColLoc));
-
-	//int objectsX = 10;
-	//int objectsY = 10;
-	//int howManyObjects = objectsX * objectsY;
-	//float *pD = new float[howManyObjects * 3];
-	//
-	//for (int i = 0; i < howManyObjects * 3; i += 3)
-	//{
-	//	float x = (float)((i/6) % objectsX);
-	//	float y = (float)((i/6) / objectsY);
-	//	pD[i + 0] = 1.0f - (2.0f * x / objectsX);
-	//	pD[i + 1] = 1.0f - (4.0f * y / objectsY); 
-	//	pD[i + 2] = 0.1f;
-	//}
-
-	////for (int i = 0; i < howManyObjects * 3; i += 3)
-	////{
-	////	Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "%.3f, %.3f, %.3f\n", pD[i], pD[i+1], pD[i+2]);
-	////}
-
-	//instanceBuffer.Initialize(pD, 3*sizeof(float), howManyObjects, 3);
-
-	//delete[] pD;
-
-	//Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\Dargon.PT.scene", &m_demoObjects[5], m_shaderPrograms[3].GetProgramId(), "..\\Data\\Textures\\DargonSkin.bmp");
-	//Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[5]);
-	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[5].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
-	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	//m_demoObjects[5].AddUniformData(Engine::UniformData(GL_TEXTURE0, m_demoObjects[5].GetMeshPointer()->GetTextureIDPtr(), texLoc));
-	//m_demoObjects[5].SetRotationAxis(Engine::Vec3(0.4f, 0.6f, 0.8f));
-	//m_demoObjects[5].SetRotationRate(Engine::MathUtility::ToRadians(18.0f));
-
-	//GLuint amount = 10;
-	//Engine::Mat4* modelMatrices;
-	//modelMatrices = new Engine::Mat4[amount]{ Engine::Mat4() };
-	//GLfloat radius = 500.0f;
-	//GLfloat offset = 20.5f;
-	//for (GLuint i = 0; i < amount; i++)
-	//{
-	//	Engine::Mat4 model;
-
-	//	GLfloat angle = (GLfloat)i / (GLfloat)amount * 360.0f;
-	//	GLfloat displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-	//	GLfloat x = sin(angle) * radius + displacement;
-	//	displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-	//	GLfloat y = displacement * 0.4f; // y value has smaller displacement
-	//	displacement = (rand() % (GLint)(2 * offset * 100)) / 100.0f - offset;
-	//	GLfloat z = cos(angle) * radius + displacement;
-	//	model = model * Engine::Mat4::Translation(Engine::Vec3(x, y, z));
-
-	//	GLfloat scale = (rand() % 20) / 100.0f + 0.05f;
-	//	model = model * Engine::Mat4::Scale(scale * 50.0f);
-
-	//	GLfloat rotAngle = (float)(rand() % 360);
-	//	model = model * Engine::Mat4::RotationAroundAxis(Engine::Vec3(0.4f, 0.6f, 0.8f), rotAngle);
-	//	
-	//	modelMatrices[i] = model;
-	//}
-
-	//asteroids.Initialize(modelMatrices, 16*sizeof(float), amount, 16 * amount);
-
-	//delete[] modelMatrices;
-
-	//int i = 0;
-	//Engine::ShapeGenerator::MakeLightingCube(&m_lights[i]);
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_lights[i].GetFullTransformPtr()->GetAddress(), modelToWorldMatLoc));
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, tintColorLoc));
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_lights[i].GetMatPtr()->m_materialColor, debugColorLoc));
-	//m_lights[i].AddUniformData(Engine::UniformData(GL_FLOAT, &m_lights[i].GetMatPtr()->m_specularIntensity, tintIntensityLoc));
-	//m_lights[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3(0.0f, LIGHT_HEIGHT, 0.0f)));
-	//m_lights[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
-	//m_lights[i].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(1.0f, 1.0f, 1.0f);
-	//Engine::RenderEngine::AddGraphicalObject(&m_lights[i]);
-	//Engine::CollisionTester::AddGraphicalObject(&m_lights[i]);
 
 	Engine::ShapeGenerator::MakeNearPlanePlane(&m_demoObjects[NUM_DARGONS_TOTAL + 1], m_shaderPrograms[9].GetProgramId());
 	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
@@ -1036,6 +870,31 @@ bool EngineDemo::UglyDemoCode()
 	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC2, &rightOffset, 41));
 	quadTransform2 = Engine::Mat4::Translation(Engine::Vec3(0.5f, 0.0f, 0.0f)) * Engine::Mat4::Scale(0.5f, 1.0f, 1.0f);
 	
+	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)
+	{
+		// use the shader based on the dargin group
+		Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.Scene", &m_demoObjects[i], m_shaderPrograms[9].GetProgramId());
+
+		m_demoObjects[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3((i%DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing, 10.0f, (i / DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing)));
+		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale(i * 0.3f));
+
+		// both sets of dargons need phong uniforms
+		m_demoObjects[i].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr(),
+			tintColorLoc, diffuseColorLoc, ambientColorLoc, specularColorLoc, specularPowerLoc, diffuseIntensityLoc, ambientIntensityLoc, specularIntensityLoc,
+			&m_lights[0].GetMatPtr()->m_materialColor, cameraPosLoc, playerCamera.GetPosPtr(), lightLoc, m_lights[0].GetLocPtr());
+		m_demoObjects[i].AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &shadeSubIndex, 1));
+		m_demoObjects[i].AddUniformData(Engine::UniformData(GL_INT, &numCelLevels, 18));
+
+		// random fun stuff
+		//m_demoObjects[i].SetRotationAxis(Engine::Vec3(0.0f, 1.0f, 0.0f));
+		//m_demoObjects[i].SetRotationRate((i % DARGONS_PER_ROW + k / DARGONS_PER_ROW) * 1.33f);
+		m_demoObjects[i].GetMatPtr()->m_materialColor = Engine::Vec3(1.0f, 1.0f, 1.0f);
+		m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity = Engine::Vec3(0.0f, 0.0f, 0.9f);
+		m_demoObjects[i].GetMatPtr()->m_ambientReflectivity = 0.2f * m_demoObjects[i].GetMatPtr()->m_diffuseReflectivity;
+		m_demoObjects[i].GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.0f, 0.0f, 0.0f);
+		m_demoObjects[i].GetMatPtr()->m_specularIntensity = 16.0f;
+		Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[i]);
+	}
 	DontBlend();
 
 	return true;
