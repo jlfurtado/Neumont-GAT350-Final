@@ -39,6 +39,7 @@ namespace Engine
 		Vec3 GetPosition();
 		void SetPosition(Vec3 newPosition);
 		Mat4 GetRotMat();
+		void SetViewDirectionDirectly(Vec3 viewDirection);
 
 
 	private:

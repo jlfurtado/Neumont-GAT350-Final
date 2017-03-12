@@ -128,6 +128,11 @@ namespace Engine
 		return Engine::Mat4::RotationAroundAxis(Engine::Vec3(0.0f, 0.0, 1.0f).Cross(m_viewDirection), Engine::MathUtility::GetVectorAngleRadians(Engine::Vec3(0.0f, 0.0f, 1.0f), m_viewDirection));
 	}
 
+	void Camera::SetViewDirectionDirectly(Vec3 viewDirection)
+	{
+		m_viewDirection = viewDirection;
+	}
+
 	float Camera::WrapAngle(float angleToWrap)
 	{
 		if (angleToWrap < -180.0f)

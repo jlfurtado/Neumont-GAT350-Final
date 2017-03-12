@@ -145,8 +145,10 @@ Engine::Mat4 quadTransform2;
 Engine::Vec2 leftOffset;
 Engine::Vec2 rightOffset;
 
+const Engine::Vec3 cameraOffsetFromSelected(0.0f, 50.0f, 15.0f);
 Engine::Camera edgeCamera;	
 Engine::Mat4 wtv2;
+int selectedObjectIndex = -1;
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -294,9 +296,23 @@ void EngineDemo::Update(float dt)
 	static Engine::GraphicalObject *s_pSelected = nullptr;
 	bool thisFrame = false;
 
-	if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
+	if (selectedObjectIndex < 0)
+	{
+		selectedObjectIndex = (int)Engine::MathUtility::Rand(0.0f, NUM_DARGONS_TOTAL - 0.01f);
+		edgeCamera.SetPosition(m_demoObjects[selectedObjectIndex].GetPos() + cameraOffsetFromSelected);
+		edgeCamera.SetViewDirectionDirectly((-cameraOffsetFromSelected).Normalize());
+	}
+
+	if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f && Engine::MouseManager::IsLeftMouseClicked())
 	{
 		Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
+		if (rco.m_didIntersect)
+		{
+			if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
+			{
+				selectedObjectIndex = -1;
+			}
+		}
 	}
 	
 
@@ -818,8 +834,7 @@ bool EngineDemo::UglyDemoCode()
 	edgeCamera.Initialize();
 	edgeCamera.SetPosition(Engine::Vec3(0.0f, 10.0f, 0.0f));
 	edgeCamera.SetRotateSpeed(10.0f);
-	edgeCamera.MouseRotate(10, 10);
-	
+
 	pCurrentBuffer = &nearestBuffer;
 
 	/*Engine::ShapeGenerator::MakeSphere(&framebufferCamera, Engine::Vec3(0.0f, 1.0f, 0.0f));
@@ -876,7 +891,7 @@ bool EngineDemo::UglyDemoCode()
 		Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.Scene", &m_demoObjects[i], m_shaderPrograms[9].GetProgramId());
 
 		m_demoObjects[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3((i%DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing, 10.0f, (i / DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing)));
-		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale(i * 0.3f));
+		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale((i+1) * 0.3f));
 
 		// both sets of dargons need phong uniforms
 		m_demoObjects[i].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr(),
@@ -894,6 +909,8 @@ bool EngineDemo::UglyDemoCode()
 		m_demoObjects[i].GetMatPtr()->m_specularReflectivity = Engine::Vec3(0.0f, 0.0f, 0.0f);
 		m_demoObjects[i].GetMatPtr()->m_specularIntensity = 16.0f;
 		Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[i]);
+		Engine::CollisionTester::AddGraphicalObject(&m_demoObjects[i]);
+
 	}
 	DontBlend();
 
