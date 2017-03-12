@@ -3,6 +3,7 @@
 *.ilk
 *.ipch
 *.obj
+!/Data/*/*.obj
 *.sdf
 *.opendb
 Debug/
