@@ -19,6 +19,7 @@ layout(location = 35) uniform float screenToTexHeight;
 layout(location = 33) uniform sampler2D uDiffuseAndSpecularTexture;
 layout(location = 18) uniform int numLevels;
 layout(location = 40) uniform vec3 edgeColor;
+layout(location = 41) uniform vec2 offset;
 
 subroutine void RenderPassType();
 subroutine uniform RenderPassType renderPass;
@@ -65,17 +66,24 @@ vec3 simple_edge_detection(in float step, in vec2 center)
 	{
 		if (darker_count / (radius*radius) < (1 - (1 / radius)))
 		{
-			return getColorAt(center);
+			return vec3(0.0);
 		}
 	}
 	return edgeColor;
 }
 
 subroutine(RenderPassType)
-void FinalPass()
+void DoEdgeOnly()
 {
 	float step = 1.0;
-	fColor.xyz = simple_edge_detection(step, vec2(gl_FragCoord.x * screenToTexWidth, gl_FragCoord.y * screenToTexHeight));
+	fColor.xyz = simple_edge_detection(step, vec2((gl_FragCoord.x + offset.x) * screenToTexWidth, (gl_FragCoord.y + offset.y) * screenToTexHeight));
+	fColor.a = 1.0;
+}
+
+subroutine(RenderPassType)
+void DoObjectOnly()
+{
+	fColor.xyz = getColorAt(vec2((gl_FragCoord.x + offset.x) * screenToTexWidth, (gl_FragCoord.y + offset.y) * screenToTexHeight)).rgb;
 	fColor.a = 1.0;
 }
 

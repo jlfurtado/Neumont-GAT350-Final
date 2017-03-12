@@ -140,6 +140,11 @@ int gravityLoc;
 Engine::Vec3 darginVelocity;
 int darginVelLoc;
 int radius = 2; // >= 2 plz
+int objectSubIndex;
+Engine::Mat4 quadTransform;
+Engine::Mat4 quadTransform2;
+Engine::Vec2 leftOffset;
+Engine::Vec2 rightOffset;
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -297,35 +302,19 @@ void EngineDemo::Update(float dt)
 
 	static Engine::GraphicalObject *s_pSelected = nullptr;
 	bool thisFrame = false;
-	Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX(), Engine::MouseManager::GetMouseY(), 1000.0f);
-	for (int i = 0; i < NUM_DEMO_OBJECTS; ++i)
+
+	if (plane && Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
 	{
-		if (rco.m_belongsTo == &m_lights[i] && Engine::MouseManager::IsLeftMouseClicked())
-		{
-			s_pSelected = &m_lights[i];
-			thisFrame = true;
-		}
+		Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
+		if (rco.m_didIntersect) { Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "OHMYGOSHURMOUSINGOVER THE DARGON\n"); }
 	}
+	
 
-	if (s_pSelected && !thisFrame && Engine::MouseManager::IsLeftMouseClicked())
-	{
-		s_pSelected = nullptr;
-		Engine::CollisionTester::CalculateGrid(); // handle de-selection of light
-	}
-
-	bool isPlane = false;
-	for (int i = 0; i < NUM_SCENES; ++i) { if (rco.m_belongsTo == &m_scenePlanes[i]) { isPlane = true; } }
-	if (rco.m_didIntersect && (isPlane) && s_pSelected)
-	{ 
-		s_pSelected->SetTransMat(Engine::Mat4::Translation(rco.m_intersectionPoint + Engine::Vec3(0.0f, LIGHT_HEIGHT, 0.0f))); 
-	}
-
-	for (int i = 0; i < NUM_SCENES; ++i){ m_scenePlanes[i].CalcFullTransform(); }
 
 	static float error = 0.0f;
 	error += 25.0f * dt;
 	if (error > 1.0f) { error -= 1.0f; 	fbCam.MouseRotate(1, 0);}
-
+		
 	fbCam.SetPosition(m_lights[0].GetPos());
 	m_demoObjects[NUM_DARGONS_TOTAL].SetTransMat(Engine::Mat4::Translation(m_lights[0].GetPos()));
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
@@ -354,6 +343,8 @@ void EngineDemo::Update(float dt)
 	darginVelocity = (playerGraphicalObject.GetPos() - lastPos) / dt;
 	lastPos = playerGraphicalObject.GetPos();
 
+
+
 }
 
 void EngineDemo::Draw()
@@ -363,34 +354,40 @@ void EngineDemo::Draw()
 
 	if (!plane)
 	{
+		m_perspective.SetScreenDimmensions(m_pWindow->width(), m_pWindow->height());
+		m_perspective.SetAspectRatio((m_pWindow->width() / 1.0f) / m_pWindow->height());
+
+		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(false);
 		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
 		Engine::RenderEngine::Draw();
 		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
-
-		// draw fps text
-		m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
-		m_EngineDemoInfoObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(true);
 	}
 	else
 	{
+		m_perspective.SetScreenDimmensions(m_pWindow->width() / 2, m_pWindow->height());
+		m_perspective.SetAspectRatio((m_pWindow->width() / 2.0f) / m_pWindow->height());
 		pCurrentBuffer->Bind();
-
-		// draw fps text
-		m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
-		m_EngineDemoInfoObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 
 		m_grid.SetEnabled(false);
 		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
+		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(false);
 		Engine::RenderEngine::Draw();
 		m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(true);
+		m_demoObjects[NUM_DARGONS_TOTAL].SetEnabled(true);
 		m_grid.SetEnabled(true);
 
-		screenToTexWidth = (float)framebufferWidth / m_pWindow->width();
+		screenToTexWidth = (float)framebufferWidth / ( m_pWindow->width() / 2.0f);
 		screenToTexHeight = (float)framebufferHeight / m_pWindow->height();
+		leftOffset = Engine::Vec2(0.0f);
+		rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
 
 		pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
 
 		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
+		Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL]);
+
+
 	}
 
 
@@ -577,7 +574,8 @@ bool EngineDemo::InitializeGL()
 	//subThreeIndex = m_shaderPrograms[3].GetSubroutineIndex(GL_FRAGMENT_SHADER, "PhongWithShadowAverage");
 	//edgeSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_GEOMETRY_SHADER, "DoEdges");
 	//passSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_GEOMETRY_SHADER, "PassThrough");
-	finalSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "FinalPass");
+	edgeSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "DoEdgeOnly");
+	objectSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "DoObjectOnly");
 	shadeSubIndex = m_shaderPrograms[9].GetSubroutineIndex(GL_FRAGMENT_SHADER, "Shade");
 	//doNothingFragSubIndex = m_shaderPrograms[4].GetSubroutineIndex(GL_FRAGMENT_SHADER, "DoNothing");
 	//eyeLightPosLoc = m_shaderPrograms[9].GetUniformLocation("eyeLightPos");
@@ -804,7 +802,7 @@ bool EngineDemo::UglyDemoCode()
 	player.SetName("Player");
 	player.AddComponent(&playerSpatial, "PlayerSpatial");
 	Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.scene", &playerGraphicalObject, m_shaderPrograms[9].GetProgramId());
-
+	Engine::CollisionTester::AddGraphicalObject(&playerGraphicalObject);
 	playerGraphicalObject.AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr()->GetAddress(),
 		tintColorLoc, diffuseColorLoc, ambientColorLoc, specularColorLoc, specularPowerLoc, diffuseIntensityLoc, ambientIntensityLoc, specularIntensityLoc,
 		&playerGraphicalObject.GetMatPtr()->m_materialColor, cameraPosLoc, playerCamera.GetPosPtr(), lightLoc, m_lights[0].GetLocPtr());
@@ -1005,19 +1003,34 @@ bool EngineDemo::UglyDemoCode()
 
 	Engine::ShapeGenerator::MakeNearPlanePlane(&m_demoObjects[NUM_DARGONS_TOTAL + 1], m_shaderPrograms[9].GetProgramId());
 	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
-	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, modelToWorldMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &quadTransform, modelToWorldMatLoc));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, worldToViewMatLoc));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, perspectiveMatLoc));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_demoObjects[NUM_DARGONS_TOTAL + 1].GetMatPtr()->m_materialColor, tintColorLoc));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_TEXTURE0, pCurrentBuffer->GetTexIdPtr(), 33));
-	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &finalSubIndex, 1));
-	//m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &zeroVec, eyeLightPosLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &objectSubIndex, 1));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexWidth, 34));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexHeight, 35));
-	//m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_INT, pCurrentBuffer->GetWidthPtr(), 37));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_INT, &radius, 36));
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &edgeColor, 40));
+	m_demoObjects[NUM_DARGONS_TOTAL + 1].AddUniformData(Engine::UniformData(GL_FLOAT_VEC2, &leftOffset, 41));
+	quadTransform = Engine::Mat4::Translation(Engine::Vec3(-0.5f, 0.0f, 0.0f)) * Engine::Mat4::Scale(0.5f, 1.0f, 1.0f);
 
+	Engine::ShapeGenerator::MakeNearPlanePlane(&m_demoObjects[NUM_DARGONS_TOTAL], m_shaderPrograms[9].GetProgramId());
+	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[NUM_DARGONS_TOTAL]);
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &quadTransform2, modelToWorldMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, worldToViewMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, &identity, perspectiveMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &m_demoObjects[NUM_DARGONS_TOTAL].GetMatPtr()->m_materialColor, tintColorLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_TEXTURE0, pCurrentBuffer->GetTexIdPtr(), 33));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FRAGMENT_SHADER, &edgeSubIndex, 1));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexWidth, 34));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT, &screenToTexHeight, 35));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_INT, &radius, 36));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &edgeColor, 40));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC2, &rightOffset, 41));
+	quadTransform2 = Engine::Mat4::Translation(Engine::Vec3(0.5f, 0.0f, 0.0f)) * Engine::Mat4::Scale(0.5f, 1.0f, 1.0f);
+	
 	DontBlend();
 
 	return true;

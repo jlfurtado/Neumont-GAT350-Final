@@ -63,11 +63,6 @@ private:
 	void DoColorThisPass();
 	void DoStencilThing();
 	void DoStencilThingTwo();
-	void PassOneRegular();
-	void PassTwoRegular();
-	void PassOneVolumetric();
-	void PassTwoVolumetric();
-	void PassThreeVolumetric();
 
 	//data
 	static const int NUM_SHADER_PROGRAMS = 10;
