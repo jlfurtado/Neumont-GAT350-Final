@@ -149,6 +149,7 @@ const Engine::Vec3 cameraOffsetFromSelected(0.0f, 50.0f, 15.0f);
 Engine::Camera edgeCamera;	
 Engine::Mat4 wtv2;
 int selectedObjectIndex = -1;
+int score = 0;
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -311,7 +312,16 @@ void EngineDemo::Update(float dt)
 			if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
 			{
 				selectedObjectIndex = -1;
+				score += 50;
 			}
+			else
+			{
+				score -= 15;
+			}
+
+			char scoreText[50];
+			sprintf_s(scoreText, 50, "Score: %d\n", score);
+			m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 		}
 	}
 	
@@ -704,8 +714,9 @@ void EngineDemo::ShowFrameRate(float dt)
 	{
 		//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
 		char fpsText[50];
-		sprintf_s(fpsText, 50, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
-		m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, fpsText);
+		//sprintf_s(fpsText, 50, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
+		Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
+		//m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, fpsText);
 		timeAccumulator = 0;
 		numFrames = 0;
 	}
@@ -820,7 +831,7 @@ bool EngineDemo::UglyDemoCode()
 		return false;
 	}
 
-	m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "FPS not calculated yet!\n");
+	m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
 	m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
 	m_perspective.SetPerspective(m_pWindow->width() / static_cast<float>(m_pWindow->height()), Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));
