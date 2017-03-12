@@ -145,6 +145,9 @@ Engine::Mat4 quadTransform2;
 Engine::Vec2 leftOffset;
 Engine::Vec2 rightOffset;
 
+Engine::Camera edgeCamera;	
+Engine::Mat4 wtv2;
+
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
 	m_pWindow = window;
@@ -347,11 +350,16 @@ void EngineDemo::Update(float dt)
 
 void EngineDemo::Draw()
 {
+	wtv2 = edgeCamera.GetWorldToViewMatrix();
+
 	// Clear window
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	// ugly code to to force screen splitting towork
 	m_perspective.SetScreenDimmensions(m_pWindow->width() / 2, m_pWindow->height());
 	m_perspective.SetAspectRatio((m_pWindow->width() / 2.0f) / m_pWindow->height());
+	
+	// draw objects from player perspective for left side of screen
 	pCurrentBuffer->Bind();
 
 	m_demoObjects[NUM_DARGONS_TOTAL + 1].SetEnabled(false);
@@ -369,7 +377,26 @@ void EngineDemo::Draw()
 
 	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
 
+	// draw quad to which the other objects were rendered
 	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL + 1]);
+
+
+
+	// draw objects from alternate camera for edge quad
+	pCurrentBuffer->Bind();
+	
+	Engine::RenderEngine::DrawSingleObjectDifferently(&playerGraphicalObject, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
+	Engine::RenderEngine::DrawSingleObjectDifferently(&m_grid, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
+
+	for (int i = 0; i < NUM_DARGONS_TOTAL - 1; ++i)
+	{
+		if (!m_demoObjects[i].GetMeshPointer()) { continue; }
+		Engine::RenderEngine::DrawSingleObjectDifferently(&m_demoObjects[i], nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
+	}
+
+	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
+
+	// draw quad to which alternate camera stuff was rendered
 	Engine::RenderEngine::DrawSingleObjectRegularly(&m_demoObjects[NUM_DARGONS_TOTAL]);
 }
 
@@ -816,7 +843,12 @@ bool EngineDemo::UglyDemoCode()
 	Engine::Perspective p;
 	p.SetPerspective(framebufferAspect, Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	framebufferPerspective = p.GetPerspective();
-
+	
+	edgeCamera.Initialize();
+	edgeCamera.SetPosition(Engine::Vec3(0.0f, 10.0f, 0.0f));
+	edgeCamera.SetRotateSpeed(10.0f);
+	edgeCamera.MouseRotate(10, 10);
+	
 	pCurrentBuffer = &nearestBuffer;
 
 	/*Engine::ShapeGenerator::MakeSphere(&framebufferCamera, Engine::Vec3(0.0f, 1.0f, 0.0f));
