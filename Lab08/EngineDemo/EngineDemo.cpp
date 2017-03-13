@@ -36,7 +36,7 @@
 // EngineDemo.cpp
 // The game
 
-const float dargonSpacing = 115.0f;
+const float dargonSpacing = 250.0f;
 const int DARGONS_PER_ROW = 4;
 const int NUM_DARGONS_DEMO1 = DARGONS_PER_ROW * DARGONS_PER_ROW;
 const int NUM_DRAGONS_DEMO2 = DARGONS_PER_ROW * DARGONS_PER_ROW;
@@ -145,7 +145,7 @@ Engine::Mat4 quadTransform2;
 Engine::Vec2 leftOffset;
 Engine::Vec2 rightOffset;
 
-const Engine::Vec3 cameraOffsetFromSelected(0.0f, 50.0f, 15.0f);
+const Engine::Vec3 cameraOffsetFromSelected(0.0f, 125.0f, 15.0f);
 Engine::Camera edgeCamera;	
 Engine::Mat4 wtv2;
 int selectedObjectIndex = -1;
@@ -396,6 +396,7 @@ void EngineDemo::Draw()
 	// draw objects from alternate camera for edge quad
 	pCurrentBuffer->Bind();
 	
+	//Engine::RenderEngine::DrawSingleObjectDifferently(&m_demoObjects[NUM_DARGONS_TOTAL + 2], nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 	Engine::RenderEngine::DrawSingleObjectDifferently(&playerGraphicalObject, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 	Engine::RenderEngine::DrawSingleObjectDifferently(&m_grid, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 
@@ -939,7 +940,7 @@ bool EngineDemo::UglyDemoCode()
 		Engine::ShapeGenerator::ReadSceneFile(modelNames + indicesForModelNames[i % numModels], &m_demoObjects[i], m_shaderPrograms[9].GetProgramId());
 
 		m_demoObjects[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3((i%DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing, 15.0f, (i / DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing)));
-		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale(5.0f));
+		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale(15.0f));
 
 		// both sets of dargons need phong uniforms
 		m_demoObjects[i].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr(),
