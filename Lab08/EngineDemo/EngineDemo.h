@@ -69,7 +69,8 @@ private:
 	bool paused = false;
 	Engine::Perspective m_perspective;
 	Engine::TextObject m_fpsTextObject;
-	Engine::TextObject m_EngineDemoInfoObject;
+	Engine::TextObject m_textTimeLeft;
+	// Engine::TextObject m_EngineDemoInfoObject;
 	Engine::MyWindow *m_pWindow{ nullptr };
 	Engine::ShaderProgram m_shaderPrograms[NUM_SHADER_PROGRAMS];
 	GLint matLoc;

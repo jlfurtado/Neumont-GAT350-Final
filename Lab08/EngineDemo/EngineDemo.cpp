@@ -150,6 +150,8 @@ Engine::Camera edgeCamera;
 Engine::Mat4 wtv2;
 int selectedObjectIndex = -1;
 int score = 0;
+float const TIME_TO_COUNT = 15.0f;
+float timeLeft = TIME_TO_COUNT;
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -304,6 +306,13 @@ void EngineDemo::Update(float dt)
 		edgeCamera.SetViewDirectionDirectly((-cameraOffsetFromSelected).Normalize());
 	}
 
+	timeLeft -= dt;
+	if (timeLeft <= 0.0f)
+		timeLeft = 0.0f;
+	char timeLeftText[50];
+	sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
+	m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
+	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 	if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f && Engine::MouseManager::IsLeftMouseClicked())
 	{
 		Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
@@ -312,13 +321,14 @@ void EngineDemo::Update(float dt)
 			if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
 			{
 				selectedObjectIndex = -1;
-				score += 50;
+				score += static_cast<int>(timeLeft * 2.0f);
 			}
 			else
 			{
-				score -= 15;
+				score -= TIME_TO_COUNT;
 			}
 
+			timeLeft = TIME_TO_COUNT;
 			char scoreText[50];
 			sprintf_s(scoreText, 50, "Score: %d\n", score);
 			m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
@@ -370,6 +380,7 @@ void EngineDemo::Draw()
 	leftOffset = Engine::Vec2(0.0f);
 	rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
 
+	m_textTimeLeft.RenderText(&m_shaderPrograms[0], debugColorLoc);
 	m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 
 	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
@@ -831,8 +842,9 @@ bool EngineDemo::UglyDemoCode()
 		return false;
 	}
 
-	m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
-	m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
+	m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
+	m_textTimeLeft.SetupText( -0.9f, m_pWindow->height() - 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Time: 0\n");
+	// m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
 	m_perspective.SetPerspective(m_pWindow->width() / static_cast<float>(m_pWindow->height()), Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));
 	Engine::MousePicker::SetPerspectiveInfo(m_perspective.GetFOVY(), m_perspective.GetNearDist(), m_perspective.GetWidth(), m_perspective.GetHeight());
