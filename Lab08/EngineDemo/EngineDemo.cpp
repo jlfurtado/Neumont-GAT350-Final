@@ -152,6 +152,7 @@ int selectedObjectIndex = -1;
 int score = 0;
 float const TIME_TO_COUNT = 15.0f;
 float timeLeft = TIME_TO_COUNT;
+Engine::Vec3 noEdgeColor(0.0f);
 
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
@@ -912,6 +913,7 @@ bool EngineDemo::UglyDemoCode()
 	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_INT, &radius, 36));
 	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &edgeColor, 40));
 	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC2, &rightOffset, 41));
+	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &noEdgeColor, 42));
 	quadTransform2 = Engine::Mat4::Translation(Engine::Vec3(0.5f, 0.0f, 0.0f)) * Engine::Mat4::Scale(0.5f, 1.0f, 1.0f);
 	
 	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)

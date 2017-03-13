@@ -19,6 +19,7 @@ layout(location = 35) uniform float screenToTexHeight;
 layout(location = 33) uniform sampler2D uDiffuseAndSpecularTexture;
 layout(location = 18) uniform int numLevels;
 layout(location = 40) uniform vec3 edgeColor;
+layout(location = 42) uniform vec3 noEdgeColor;
 layout(location = 41) uniform vec2 offset;
 
 subroutine void RenderPassType();
@@ -66,7 +67,7 @@ vec3 simple_edge_detection(in float step, in vec2 center)
 	{
 		if (darker_count / (radius*radius) < (1 - (1 / radius)))
 		{
-			return vec3(0.0);
+			return noEdgeColor;
 		}
 	}
 	return edgeColor;
