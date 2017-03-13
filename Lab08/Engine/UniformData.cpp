@@ -71,6 +71,7 @@ namespace Engine
 			glActiveTexture(m_uniformType);
 			glBindTexture(GL_TEXTURE_2D, *reinterpret_cast<int*>(m_pUniformData));
 			glUniform1i(m_uniformDataLoc, (m_uniformType - GL_TEXTURE0));
+			if (m_logForThis) { GameLogger::Log(MessageType::ConsoleOnly, "Passed (%d) to uniform [%d]\n", *reinterpret_cast<int*>(m_pUniformData), m_uniformDataLoc); }
 			break;
 
 		default:

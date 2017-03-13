@@ -49,7 +49,7 @@ const int NUM_USED_SHADERS = 10;
 const int NUM_NON_TEAPOT_SHADERS = 4;
 const int TEAPOTS_PER_SHADER = 3;
 const int NUM_DARGONS_TOTAL = NUM_DARGONS_DEMO1;
-const int NUM_DEMO_OBJECTS = NUM_DARGONS_TOTAL + 2;
+const int NUM_DEMO_OBJECTS = NUM_DARGONS_TOTAL + 3;
 const float TEAPOT_DISTANCE = 35.0f;
 const float ROTATE_DISTANCE = TEAPOT_DISTANCE / 2.5f;
 Engine::GraphicalObject m_grid;
@@ -346,6 +346,7 @@ void EngineDemo::Update(float dt)
 	m_demoObjects[NUM_DARGONS_TOTAL].SetTransMat(Engine::Mat4::Translation(m_lights[0].GetPos()));
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
 	m_demoObjects[NUM_DARGONS_TOTAL].CalcFullTransform();
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].CalcFullTransform();
 
 	//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "fractalSeed : (%.3f, %.3f)\n", fractalSeed.GetX(), fractalSeed.GetY()); // Amazingly useful for debugging fractal shader
 	shaderOffset += step * dt; if (shaderOffset > maxBorder) { shaderOffset = maxBorder; step *= -1.0f; } if (shaderOffset < minBorder) { shaderOffset = minBorder; step *= -1.0f; }
@@ -553,8 +554,8 @@ bool EngineDemo::InitializeGL()
 
 	if (m_shaderPrograms[8].Initialize())
 	{					 
-		m_shaderPrograms[8].AddVertexShader("..\\Data\\Shaders\\DemoQuad3.vert.shader");
-		m_shaderPrograms[8].AddFragmentShader("..\\Data\\Shaders\\DemoQuad3.frag.shader");
+		m_shaderPrograms[8].AddVertexShader("..\\Data\\Shaders\\SkyBox.vert.shader");
+		m_shaderPrograms[8].AddFragmentShader("..\\Data\\Shaders\\SkyBox.frag.shader");
 		m_shaderPrograms[8].LinkProgram();
 		m_shaderPrograms[8].UseProgram();
 	}
@@ -605,9 +606,9 @@ bool EngineDemo::InitializeGL()
 	//mossLoc = m_shaderPrograms[3].GetUniformLocation("mossSampler");
 	//brickLoc = m_shaderPrograms[3].GetUniformLocation("shadowMap");
 	halfWidthLoc = m_shaderPrograms[5].GetUniformLocation("halfWidth");
-	//repeatScaleLoc = m_shaderPrograms[3].GetUniformLocation("repeatScale");
-	//numIterationsLoc = m_shaderPrograms[3].GetUniformLocation("numIterations");
-	//shaderOffsetLoc = m_shaderPrograms[3].GetUniformLocation("randomValue");
+	repeatScaleLoc = m_shaderPrograms[8].GetUniformLocation("repeatScale");
+	numIterationsLoc = m_shaderPrograms[8].GetUniformLocation("numIterations");
+	shaderOffsetLoc = m_shaderPrograms[8].GetUniformLocation("randomValue");
 	vpmLoc = m_shaderPrograms[4].GetUniformLocation("viewportMatrix");
 	lineWidthLoc = m_shaderPrograms[4].GetUniformLocation("lineInfo.width");
 	lineColorLoc = m_shaderPrograms[4].GetUniformLocation("lineInfo.color");
@@ -916,6 +917,22 @@ bool EngineDemo::UglyDemoCode()
 	m_demoObjects[NUM_DARGONS_TOTAL].AddUniformData(Engine::UniformData(GL_FLOAT_VEC3, &noEdgeColor, 42));
 	quadTransform2 = Engine::Mat4::Translation(Engine::Vec3(0.5f, 0.0f, 0.0f)) * Engine::Mat4::Scale(0.5f, 1.0f, 1.0f);
 	
+
+	Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\SkySphere.PT.Scene", &m_demoObjects[NUM_DARGONS_TOTAL + 2], m_shaderPrograms[8].GetProgramId(), "..\\Data\\Textures\\fractalGradient.bmp");
+	//redTextureID = Engine::BitmapLoader::LoadTexture("..\\Data\\Textures\\fractalGradient.bmp");
+
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].SetTransMat(Engine::Mat4::Translation(Engine::Vec3(0.0f, 0.0f, 0.0f)));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].SetScaleMat(Engine::Mat4::Scale(RENDER_DISTANCE * 0.99f));
+	Engine::RenderEngine::AddGraphicalObject(&m_demoObjects[NUM_DARGONS_TOTAL + 2]);
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_demoObjects[NUM_DARGONS_TOTAL + 2].GetFullTransformPtr(), modelToWorldMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), worldToViewMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_FLOAT_MAT4, m_perspective.GetPerspectivePtr()->GetAddress(), perspectiveMatLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_TEXTURE0, m_demoObjects[NUM_DARGONS_TOTAL + 2].GetMeshPointer()->GetTextureIDPtr(), 15));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_FLOAT_VEC2, &fractalSeed, shaderOffsetLoc));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_FLOAT, &repeatScale, repeatScaleLoc, true));
+	m_demoObjects[NUM_DARGONS_TOTAL + 2].AddUniformData(Engine::UniformData(GL_INT, &numIterations, numIterationsLoc));
+	repeatScale = 1.0f;
+
 	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)
 	{
 		// use the shader based on the dargin group

@@ -216,6 +216,8 @@
     <None Include="..\Data\Shaders\Shadows.vert.shader" />
     <None Include="..\Data\Shaders\SimpleTexture.frag.shader" />
     <None Include="..\Data\Shaders\SimpleTexture.vert.shader" />
+    <None Include="..\Data\Shaders\SkyBox.frag.shader" />
+    <None Include="..\Data\Shaders\SkyBox.vert.shader" />
     <None Include="..\Data\Shaders\Spotlight.frag.shader" />
     <None Include="..\Data\Shaders\Spotlight.vert.shader" />
     <None Include="..\Data\Shaders\Subroutine.frag.shader" />

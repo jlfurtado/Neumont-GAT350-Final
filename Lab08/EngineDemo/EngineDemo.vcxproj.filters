@@ -258,6 +258,12 @@
     <None Include="..\Data\Shaders\EdgeDetection.vert.shader">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="..\Data\Shaders\SkyBox.frag.shader">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="..\Data\Shaders\SkyBox.vert.shader">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EngineDemo.h">
