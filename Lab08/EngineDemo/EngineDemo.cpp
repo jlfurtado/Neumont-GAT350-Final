@@ -386,7 +386,7 @@ void EngineDemo::Draw()
 	Engine::RenderEngine::DrawSingleObjectDifferently(&playerGraphicalObject, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 	Engine::RenderEngine::DrawSingleObjectDifferently(&m_grid, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 
-	for (int i = 0; i < NUM_DARGONS_TOTAL - 1; ++i)
+	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)
 	{
 		if (!m_demoObjects[i].GetMeshPointer()) { continue; }
 		Engine::RenderEngine::DrawSingleObjectDifferently(&m_demoObjects[i], nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
