@@ -343,6 +343,7 @@ void EngineDemo::Update(float dt)
 
 	vpm = Engine::Mat4::ViewPort((float)m_pWindow->width(), 0.0f, (float)m_pWindow->height(), 0.0f, RENDER_DISTANCE, m_perspective.GetNearDist());
 	Engine::CollisionTester::CalculateGrid();
+	m_lights[0].SetTransMat(Engine::Mat4::Translation(playerGraphicalObject.GetPos() + Engine::Vec3(0.0f, 15.0f, 0.0f)));
 }
 
 void EngineDemo::Draw()
