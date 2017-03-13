@@ -353,6 +353,7 @@ void EngineDemo::Update(float dt)
 
 	vpm = Engine::Mat4::ViewPort((float)m_pWindow->width(), 0.0f, (float)m_pWindow->height(), 0.0f, RENDER_DISTANCE, m_perspective.GetNearDist());
 	Engine::CollisionTester::CalculateGrid();
+	m_lights[0].SetTransMat(Engine::Mat4::Translation(playerGraphicalObject.GetPos() + Engine::Vec3(0.0f, 15.0f, 0.0f)));
 }
 
 void EngineDemo::Draw()
@@ -396,7 +397,7 @@ void EngineDemo::Draw()
 	Engine::RenderEngine::DrawSingleObjectDifferently(&playerGraphicalObject, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 	Engine::RenderEngine::DrawSingleObjectDifferently(&m_grid, nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
 
-	for (int i = 0; i < NUM_DARGONS_TOTAL - 1; ++i)
+	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)
 	{
 		if (!m_demoObjects[i].GetMeshPointer()) { continue; }
 		Engine::RenderEngine::DrawSingleObjectDifferently(&m_demoObjects[i], nullptr, &wtv2, nullptr, worldToViewMatLoc, 0, 0);
@@ -807,8 +808,13 @@ void EngineDemo::DontBlend()
 	glDisable(GL_BLEND);
 }
 
+const int numModels = 9;
+const char *modelNames = "..\\Data\\Scenes\\Tree.PN.scene\0..\\Data\\Scenes\\Wedge.PN.scene\0..\\Data\\Scenes\\Soccer.PN.scene\0..\\Data\\Scenes\\Pipe.PN.scene\0..\\Data\\Scenes\\Coil.PN.scene\0..\\Data\\Scenes\\Cup.PN.scene\0..\\Data\\Scenes\\Star.PN.scene\0..\\Data\\Scenes\\Chair.PN.scene\0..\\Data\\Scenes\\Cone.PN.scene\0";
+int indicesForModelNames[numModels] = { 0 };
 bool EngineDemo::UglyDemoCode()
 {
+	InitIndicesForMeshNames(modelNames, &indicesForModelNames[0], numModels);
+
 	player.SetName("Player");
 	player.AddComponent(&playerSpatial, "PlayerSpatial");
 	Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.scene", &playerGraphicalObject, m_shaderPrograms[9].GetProgramId());
@@ -911,10 +917,10 @@ bool EngineDemo::UglyDemoCode()
 	for (int i = 0; i < NUM_DARGONS_TOTAL; ++i)
 	{
 		// use the shader based on the dargin group
-		Engine::ShapeGenerator::ReadSceneFile("..\\Data\\Scenes\\BetterDargon.PN.Scene", &m_demoObjects[i], m_shaderPrograms[9].GetProgramId());
+		Engine::ShapeGenerator::ReadSceneFile(modelNames + indicesForModelNames[i % numModels], &m_demoObjects[i], m_shaderPrograms[9].GetProgramId());
 
-		m_demoObjects[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3((i%DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing, 10.0f, (i / DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing)));
-		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale((i+1) * 0.3f));
+		m_demoObjects[i].SetTransMat(Engine::Mat4::Translation(Engine::Vec3((i%DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing, 15.0f, (i / DARGONS_PER_ROW - (DARGONS_PER_ROW / 2 - 0.5f))*dargonSpacing)));
+		m_demoObjects[i].SetScaleMat(Engine::Mat4::Scale(5.0f));
 
 		// both sets of dargons need phong uniforms
 		m_demoObjects[i].AddPhongUniforms(modelToWorldMatLoc, worldToViewMatLoc, playerCamera.GetWorldToViewMatrixPtr()->GetAddress(), perspectiveMatLoc, m_perspective.GetPerspectivePtr(),
@@ -938,6 +944,17 @@ bool EngineDemo::UglyDemoCode()
 	DontBlend();
 
 	return true;
+}
+
+void EngineDemo::InitIndicesForMeshNames(const char *const meshNames, int *indices, int numMeshes)
+{
+	indices[0] = 0;
+
+	int meshIndex = 1;
+	for (int i = 0; meshIndex < numMeshes; ++i)
+	{
+		if (*(meshNames + i) == '\0') { indices[meshIndex] = i + 1; meshIndex++; }
+	}
 }
 
 void EngineDemo::SwapSubroutineIndex(void **pIndexPtr, int start, int end)

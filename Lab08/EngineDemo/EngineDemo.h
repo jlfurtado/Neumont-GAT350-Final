@@ -63,6 +63,7 @@ private:
 	void DoColorThisPass();
 	void DoStencilThing();
 	void DoStencilThingTwo();
+	void InitIndicesForMeshNames(const char *const meshNames, int *indices, int numMeshes);
 
 	//data
 	static const int NUM_SHADER_PROGRAMS = 10;
