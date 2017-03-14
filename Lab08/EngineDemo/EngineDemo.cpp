@@ -12,6 +12,8 @@
 #include "MyFiles.h"
 #include "ShaderProgram.h"
 #include "BitmapLoader.h"
+#include "SoundEngine.h"
+#include "SoundObject.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4251)
@@ -155,6 +157,11 @@ float const TIME_TO_COUNT = 15.0f;
 float timeLeft = TIME_TO_COUNT;
 Engine::Vec3 noEdgeColor(0.0f);
 
+SoundObject backgroundMusic;
+SoundObject correctSFX;
+SoundObject incorrectSFX;
+
+
 bool EngineDemo::Initialize(Engine::MyWindow *window)
 {
 	m_pWindow = window;
@@ -208,19 +215,25 @@ bool EngineDemo::Initialize(Engine::MyWindow *window)
 	}
 
 	// Initialize Text
-	if (!m_fpsTextObject.Load("..\\Data\\Fonts\\comic.ttf", 12))
+	//if (!m_fpsTextObject.Load("..\\Data\\Fonts\\comic.ttf", 12))
+	//{
+	//	Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
+	//	return false;
+	//}
+	//if (!m_textTimeLeft.Load("..\\Data\\Fonts\\comic.ttf", 12))
+	//{
+	//	Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
+	//	return false;
+	//}
+
+	if (!SoundEngine::Initialize())
 	{
-		Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
+		Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to initialize SoundEngine");
 		return false;
 	}
-	if (!m_textTimeLeft.Load("..\\Data\\Fonts\\comic.ttf", 12))
-	{
-		Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
-		return false;
-	}
-
-
-
+	backgroundMusic.Initialize("..\\Data\\Sounds\\ElectricalAmbiance.wav");
+	correctSFX.Initialize("..\\Data\\Sounds\\correct.wav");
+	incorrectSFX.Initialize("..\\Data\\Sounds\\incorrect.wav");
 
 	Engine::CollisionTester::CalculateGrid();
 
@@ -327,10 +340,10 @@ void EngineDemo::Update(float dt)
 	timeLeft -= dt;
 	if (timeLeft <= 0.0f)
 		timeLeft = 0.0f;
-	// char timeLeftText[50];
-	// sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
-	// m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
-	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+	char timeLeftText[50];
+	sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
+	m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
+	// m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 
 	if (Engine::MouseManager::IsLeftMouseClicked())
 	{
@@ -345,16 +358,18 @@ void EngineDemo::Update(float dt)
 				{
 					selectedObjectIndex = -1;
 					score += static_cast<int>(timeLeft * 2.0f);
+					correctSFX.Play();
 				}
 				else
 				{
 					score -= TIME_TO_COUNT;
+					incorrectSFX.Play();
 				}
 
 				timeLeft = TIME_TO_COUNT;
-				// char scoreText[50];
-				// sprintf_s(scoreText, 50, "Score: %d\n", score);
-				// m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+				char scoreText[50];
+				sprintf_s(scoreText, 50, "Score: %d\n", score);
+				m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 			}
 		}
 	}
@@ -364,6 +379,12 @@ void EngineDemo::Update(float dt)
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
 	m_demoObjects[NUM_DARGONS_TOTAL].CalcFullTransform();
 	m_demoObjects[NUM_DARGONS_TOTAL + 2].CalcFullTransform();
+
+	if (!backgroundMusic.GetIsPlaying())
+	{
+		backgroundMusic.Play();
+	}
+
 
 	//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "fractalSeed : (%.3f, %.3f)\n", fractalSeed.GetX(), fractalSeed.GetY()); // Amazingly useful for debugging fractal shader
 	shaderOffset += step * dt; if (shaderOffset > maxBorder) { shaderOffset = maxBorder; step *= -1.0f; } if (shaderOffset < minBorder) { shaderOffset = minBorder; step *= -1.0f; }
@@ -399,10 +420,10 @@ void EngineDemo::Draw()
 	leftOffset = Engine::Vec2(0.0f);
 	rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
 
-	m_textTimeLeft.RenderText(0, m_pWindow->height() - 10, Engine::Vec3(1.0f), "Time Left: %2.2f\n", timeLeft);
-	m_fpsTextObject.RenderText(0, 0, "Score: %d", Engine::Vec3(1.0f), score);
+	// m_textTimeLeft.RenderText(0, m_pWindow->height() - 10, Engine::Vec3(1.0f), "Time Left: %2.2f\n", timeLeft);
+	// m_fpsTextObject.RenderText(0, 0, "Score: %d", Engine::Vec3(1.0f), score);
 
-	// m_textTimeLeft.RenderText(&m_shaderPrograms[0, debugColorLoc);
+	// m_textTimeLeft.RenderText(&m_shaderPrograms[0], debugColorLoc);
 	// m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 
 	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
@@ -599,10 +620,10 @@ bool EngineDemo::InitializeGL()
 		m_shaderProgramText.UseProgram();
 	}
 
-	m_fpsTextObject.SetShader(&m_shaderProgramText);
-	m_fpsTextObject.Initialize(m_pWindow->width(), m_pWindow->height());
-	m_textTimeLeft.SetShader(&m_shaderProgramText);
-	m_textTimeLeft.Initialize(m_pWindow->width(), m_pWindow->height());
+	// m_fpsTextObject.SetShader(&m_shaderProgramText);
+	// m_fpsTextObject.Initialize(m_pWindow->width(), m_pWindow->height());
+	// m_textTimeLeft.SetShader(&m_shaderProgramText);
+	// m_textTimeLeft.Initialize(m_pWindow->width(), m_pWindow->height());
 
 	// 
 
