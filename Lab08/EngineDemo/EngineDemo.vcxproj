@@ -91,14 +91,14 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Middleware\stb\include\;$(SolutionDir)Engine\;$(SolutionDir)..\Middleware\QT\include\;$(SolutionDir)..\Middleware\glew\include\;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Middleware\stb\include\;$(SolutionDir)Engine\;$(SolutionDir)..\Middleware\QT\include\;$(SolutionDir)..\Middleware\glew\include\;$(SolutionDir)..\Middleware\irrKlang\include\;$(SolutionDir)..\Middleware\irrKlang\include</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Engine.lib;openGL32.lib;QTCored4.lib;QTGUId4.lib;QTOpenGLd4.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Middleware\QT\lib\;$(SolutionDir)..\Middleware\glew\lib\Release\Win32\;$(SolutionDir)Debug\;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Engine.lib;openGL32.lib;QTCored4.lib;QTGUId4.lib;QTOpenGLd4.lib;glew32.lib;irrKlang.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\Middleware\QT\lib\;$(SolutionDir)..\Middleware\glew\lib\Release\Win32\;$(SolutionDir)Debug\;$(SolutionDir)..\Middleware\irrKlang\lib\Win32-visualStudio;$(SolutionDir)..\Middleware\irrKlang\lib\Win32-visualStudio</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,15 +123,15 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\Middleware\stb\include\;$(SolutionDir)..\Middleware\QT\include\;$(SolutionDir)..\Middleware\glew\include\;$(SolutionDir)Engine\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\Middleware\stb\include\;$(SolutionDir)..\Middleware\QT\include\;$(SolutionDir)..\Middleware\glew\include\;$(SolutionDir)Engine\;$(SolutionDir)..\Middleware\irrKlang\include;$(SolutionDir)..\Middleware\irrKlang\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)Release\;$(SolutionDir)..\Middleware\QT\lib\;$(SolutionDir)..\Middleware\glew\lib\Release\Win32\;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Engine.lib;openGL32.lib;QTCored4.lib;QTGUId4.lib;QTOpenGLd4.lib;glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)Release\;$(SolutionDir)..\Middleware\QT\lib\;$(SolutionDir)..\Middleware\glew\lib\Release\Win32\;$(SolutionDir)..\Middleware\irrKlang\lib\Win32-visualStudio;$(SolutionDir)..\Middleware\irrKlang\lib\Win32-visualStudio</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Engine.lib;openGL32.lib;QTCored4.lib;QTGUId4.lib;QTOpenGLd4.lib;glew32.lib;irrKlang.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -152,6 +152,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Engine\SoundEngine.cpp" />
+    <ClCompile Include="..\Engine\SoundObject.cpp" />
     <ClCompile Include="EngineDemo.cpp" />
     <ClCompile Include="KeyboardComponent.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -237,6 +239,8 @@
     <None Include="..\Data\Shaders\Wireframe.vert.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Engine\SoundEngine.h" />
+    <ClInclude Include="..\Engine\SoundObject.h" />
     <ClInclude Include="EngineDemo.h" />
     <ClInclude Include="KeyboardComponent.h" />
     <ClInclude Include="MouseComponent.h" />
