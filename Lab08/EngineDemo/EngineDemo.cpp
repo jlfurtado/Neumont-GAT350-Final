@@ -30,6 +30,7 @@
 #include "MouseComponent.h"
 #include "UniformData.h"
 #include "FrameBuffer.h"
+#include <winuser.h>
 
 // Justin Furtado
 // 6/21/2016
@@ -206,7 +207,23 @@ bool EngineDemo::Initialize(Engine::MyWindow *window)
 		return false;
 	}
 
+	// Initialize Text
+	if (!m_fpsTextObject.Load("..\\Data\\Fonts\\comic.ttf", 12))
+	{
+		Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
+		return false;
+	}
+	if (!m_textTimeLeft.Load("..\\Data\\Fonts\\comic.ttf", 12))
+	{
+		Engine::GameLogger::Log(Engine::MessageType::cFatal_Error, "Failed to load font correctly\n");
+		return false;
+	}
+
+
+
+
 	Engine::CollisionTester::CalculateGrid();
+
 	Engine::GameLogger::Log(Engine::MessageType::cProcess, "Game Initialized Successfully!!!\n");
 	return true;
 }
@@ -310,9 +327,9 @@ void EngineDemo::Update(float dt)
 	timeLeft -= dt;
 	if (timeLeft <= 0.0f)
 		timeLeft = 0.0f;
-	char timeLeftText[50];
-	sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
-	m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
+	// char timeLeftText[50];
+	// sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
+	// m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
 	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 
 	if (Engine::MouseManager::IsLeftMouseClicked())
@@ -335,9 +352,9 @@ void EngineDemo::Update(float dt)
 				}
 
 				timeLeft = TIME_TO_COUNT;
-				char scoreText[50];
-				sprintf_s(scoreText, 50, "Score: %d\n", score);
-				m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+				// char scoreText[50];
+				// sprintf_s(scoreText, 50, "Score: %d\n", score);
+				// m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
 			}
 		}
 	}
@@ -382,8 +399,11 @@ void EngineDemo::Draw()
 	leftOffset = Engine::Vec2(0.0f);
 	rightOffset = Engine::Vec2(-m_pWindow->width() / 2.0f, 0.0f);
 
-	m_textTimeLeft.RenderText(&m_shaderPrograms[0], debugColorLoc);
-	m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+	m_textTimeLeft.RenderText(0, m_pWindow->height() - 10, Engine::Vec3(1.0f), "Time Left: %2.2f\n", timeLeft);
+	m_fpsTextObject.RenderText(0, 0, "Score: %d", Engine::Vec3(1.0f), score);
+
+	// m_textTimeLeft.RenderText(&m_shaderPrograms[0, debugColorLoc);
+	// m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 
 	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
 
@@ -568,6 +588,24 @@ bool EngineDemo::InitializeGL()
 		m_shaderPrograms[9].UseProgram();
 	}
 
+
+	// Text Shader Program
+
+	if (m_shaderProgramText.Initialize())
+	{
+		m_shaderProgramText.AddVertexShader("..\\Data\\Shaders\\Text.vert.shader");
+		m_shaderProgramText.AddFragmentShader("..\\Data\\Shaders\\Text.frag.shader");
+		m_shaderProgramText.LinkProgram();
+		m_shaderProgramText.UseProgram();
+	}
+
+	m_fpsTextObject.SetShader(&m_shaderProgramText);
+	m_fpsTextObject.Initialize(m_pWindow->width(), m_pWindow->height());
+	m_textTimeLeft.SetShader(&m_shaderProgramText);
+	m_textTimeLeft.Initialize(m_pWindow->width(), m_pWindow->height());
+
+	// 
+
 	debugColorLoc = m_shaderPrograms[0].GetUniformLocation("tint");
 	tintColorLoc = m_shaderPrograms[1].GetUniformLocation("tint");
 	tintIntensityLoc = m_shaderPrograms[0].GetUniformLocation("tintIntensity");
@@ -625,6 +663,7 @@ bool EngineDemo::InitializeGL()
 	lifeTimeLoc = m_shaderPrograms[5].GetUniformLocation("uParticleLifetime");
 	gravityLoc = m_shaderPrograms[5].GetUniformLocation("uGravity");
 	//darginVelLoc = m_shaderPrograms[5].GetUniformLocation("velocityOffset");
+
 
 	if (Engine::MyGL::TestForError(Engine::MessageType::cFatal_Error, "InitializeGL errors!"))
 	{
@@ -850,8 +889,8 @@ bool EngineDemo::UglyDemoCode()
 		return false;
 	}
 
-	m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
-	m_textTimeLeft.SetupText( -0.9f, m_pWindow->height() - 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Time: 0\n");
+	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
+	// m_textTimeLeft.SetupText( -0.9f, m_pWindow->height() - 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Time: 0\n");
 	// m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
 	m_perspective.SetPerspective(m_pWindow->width() / static_cast<float>(m_pWindow->height()), Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));

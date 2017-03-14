@@ -103,6 +103,16 @@ namespace Engine
 					0.0f, 0.0f, 1.0f, 0.0f);
 	}
 
+	Mat4 Mat4::Orthographic(float left, float right, float top, float bottom)
+	{
+		return Mat4(
+			2.0f / (right - left), 0.0f, 0.0f, -(right + left) / (right - left),
+			0.0f, 2.0f / (top - bottom), 0.0f, -(top + bottom) / (top - bottom),
+			0.0f, 0.0f, -1.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 1.0f
+		);
+	}
+
 	Mat4 Mat4::InfinitePerspective(float fovy, float aspect, float near)
 	{
 		float range = tan(fovy * 0.5f) * near;
@@ -197,5 +207,10 @@ namespace Engine
 					Vec4(m_values[1],  m_values[5],  m_values[9] , m_values[13]).Dot(right),
 					Vec4(m_values[2],  m_values[6],  m_values[10], m_values[14]).Dot(right),
 					Vec4(m_values[3],  m_values[7],  m_values[11], m_values[15]).Dot(right));
+	}
+
+	float& Mat4::operator[](unsigned index)
+	{
+		return m_values[index];
 	}
 }

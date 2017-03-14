@@ -17,6 +17,7 @@
 #include "MyWindow.h"
 #include "GraphicalObject.h"
 #include "FrameBuffer.h"
+#include "TextRenderer.h"
 
 class QMouseEvent;
 
@@ -69,11 +70,12 @@ private:
 	static const int NUM_SHADER_PROGRAMS = 10;
 	bool paused = false;
 	Engine::Perspective m_perspective;
-	Engine::TextObject m_fpsTextObject;
-	Engine::TextObject m_textTimeLeft;
+	Engine::TextRenderer m_fpsTextObject;
+	Engine::TextRenderer m_textTimeLeft;
 	// Engine::TextObject m_EngineDemoInfoObject;
 	Engine::MyWindow *m_pWindow{ nullptr };
 	Engine::ShaderProgram m_shaderPrograms[NUM_SHADER_PROGRAMS];
+	Engine::ShaderProgram m_shaderProgramText;
 	GLint matLoc;
 	GLint debugColorLoc;
 	GLint tintColorLoc;

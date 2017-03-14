@@ -31,6 +31,7 @@ namespace Engine
 		static Mat4 Translation(float x, float y, float z);
 		static Mat4 Translation(const Vec3& translationVector);
 		static Mat4 Perspective(float fieldOfViewY, float aspectRatio, float nearPlane, float farPlane);
+		static Mat4 Orthographic(float left, float right, float top, float bottom);
 		static Mat4 LookAt(const Vec3& cameraPosition, const Vec3& targetPosition, const Vec3& up);
 		static Mat4 ViewPort(float right, float left, float top, float bottom, float far, float near);
 		static Mat4 Bias();
@@ -44,6 +45,7 @@ namespace Engine
 		Vec3 operator*(const Vec3& right) const;
 		Vec4 operator*(const Vec4& right) const;
 
+		float& operator[](unsigned index);
 	private:
 		static const int ELEMENTS_PER_DIRECTION = 4;
 		static const int TOTAL_ELEMENTS = ELEMENTS_PER_DIRECTION * ELEMENTS_PER_DIRECTION;
