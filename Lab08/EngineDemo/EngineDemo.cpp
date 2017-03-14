@@ -343,7 +343,7 @@ void EngineDemo::Update(float dt)
 	char timeLeftText[50];
 	sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
 	m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
-	// m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+	// m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, sc);
 
 	if (Engine::MouseManager::IsLeftMouseClicked())
 	{
@@ -423,8 +423,8 @@ void EngineDemo::Draw()
 	// m_textTimeLeft.RenderText(0, m_pWindow->height() - 10, Engine::Vec3(1.0f), "Time Left: %2.2f\n", timeLeft);
 	// m_fpsTextObject.RenderText(0, 0, "Score: %d", Engine::Vec3(1.0f), score);
 
-	// m_textTimeLeft.RenderText(&m_shaderPrograms[0], debugColorLoc);
-	// m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
+	m_textTimeLeft.RenderText(&m_shaderPrograms[0], debugColorLoc);
+	m_fpsTextObject.RenderText(&m_shaderPrograms[0], debugColorLoc);
 
 	pCurrentBuffer->UnBind(0, 0, m_pWindow->width(), m_pWindow->height());
 
@@ -910,8 +910,8 @@ bool EngineDemo::UglyDemoCode()
 		return false;
 	}
 
-	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
-	// m_textTimeLeft.SetupText( -0.9f, m_pWindow->height() - 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Time: 0\n");
+	m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Score: 0\n");
+	m_textTimeLeft.SetupText( -0.9f, m_pWindow->height() - 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "Time: 0\n");
 	// m_EngineDemoInfoObject.SetupText(0.3f, 0.9f, 0.1f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, "New Game Started!\n");
 	m_perspective.SetPerspective(m_pWindow->width() / static_cast<float>(m_pWindow->height()), Engine::MathUtility::ToRadians(60.0f), 1.0f, RENDER_DISTANCE);
 	m_perspective.SetScreenDimmensions(static_cast<float>(m_pWindow->width()), static_cast<float>(m_pWindow->height()));
