@@ -327,8 +327,8 @@ void EngineDemo::Update(float dt)
 
 	m_grid.CalcFullTransform();
 
-	static Engine::GraphicalObject *s_pSelected = nullptr;
-	bool thisFrame = false;
+	// static Engine::GraphicalObject *s_pSelected = nullptr;
+//	bool thisFrame = false;
 
 	if (selectedObjectIndex < 0)
 	{
@@ -351,7 +351,7 @@ void EngineDemo::Update(float dt)
 
 		if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
 		{
-			Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
+			Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4, Engine::MouseManager::GetMouseY(), 1000.0f);
 			if (rco.m_didIntersect)
 			{
 				if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
@@ -362,7 +362,7 @@ void EngineDemo::Update(float dt)
 				}
 				else
 				{
-					score -= TIME_TO_COUNT;
+					score -= static_cast<int>(TIME_TO_COUNT);
 					incorrectSFX.Play();
 				}
 
@@ -403,7 +403,7 @@ void EngineDemo::Draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// ugly code to to force screen splitting towork
-	m_perspective.SetScreenDimmensions(m_pWindow->width() / 2, m_pWindow->height());
+	m_perspective.SetScreenDimmensions(m_pWindow->width() / 2.0f, m_pWindow->height() * 1.0f);
 	m_perspective.SetAspectRatio((m_pWindow->width() / 2.0f) / m_pWindow->height());
 	
 	// draw objects from player perspective for left side of screen
@@ -787,7 +787,7 @@ void EngineDemo::ShowFrameRate(float dt)
 	if (timeAccumulator >= m_fpsInterval)
 	{
 		//Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
-		char fpsText[50];
+		// char fpsText[50];
 		//sprintf_s(fpsText, 50, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
 		Engine::GameLogger::Log(Engine::MessageType::ConsoleOnly, "FPS: %6.1f over %3.1f seconds.\n", numFrames / timeAccumulator, m_fpsInterval);
 		//m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, fpsText);

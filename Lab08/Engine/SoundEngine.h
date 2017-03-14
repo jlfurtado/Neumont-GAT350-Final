@@ -5,7 +5,10 @@
 // SoundEngine.h
 // Manages irrKlang's SoundObject Engine
 
+#pragma warning(push)
+#pragma warning(disable: 4251)
 #include "irrKlang.h"
+#pragma warning(pop)
 
 class SoundEngine
 {
