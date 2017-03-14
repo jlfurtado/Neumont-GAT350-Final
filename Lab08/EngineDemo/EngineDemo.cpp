@@ -314,34 +314,34 @@ void EngineDemo::Update(float dt)
 	sprintf_s(timeLeftText, 50, "Time Left: %2.2f\n", timeLeft);
 	m_textTimeLeft.SetupText( -0.9f, -0.8f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, timeLeftText);
 	// m_fpsTextObject.SetupText(-0.9f,                       0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
-	if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f && Engine::MouseManager::IsLeftMouseClicked())
-	{
-		Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
-		if (rco.m_didIntersect)
-		{
-			if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
-			{
-				selectedObjectIndex = -1;
-				score += static_cast<int>(timeLeft * 2.0f);
-			}
-			else
-			{
-				score -= TIME_TO_COUNT;
-			}
 
-			timeLeft = TIME_TO_COUNT;
-			char scoreText[50];
-			sprintf_s(scoreText, 50, "Score: %d\n", score);
-			m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+	if (Engine::MouseManager::IsLeftMouseClicked())
+	{
+		Engine::CollisionTester::CalculateGrid();
+
+		if (Engine::MouseManager::GetMouseX() < m_pWindow->width() / 2.0f)
+		{
+			Engine::RayCastingOutput rco = Engine::CollisionTester::FindFromMousePos(Engine::MouseManager::GetMouseX() + m_pWindow->width() / 4.0f, Engine::MouseManager::GetMouseY(), 1000.0f);
+			if (rco.m_didIntersect)
+			{
+				if (rco.m_belongsTo == &m_demoObjects[selectedObjectIndex])
+				{
+					selectedObjectIndex = -1;
+					score += static_cast<int>(timeLeft * 2.0f);
+				}
+				else
+				{
+					score -= TIME_TO_COUNT;
+				}
+
+				timeLeft = TIME_TO_COUNT;
+				char scoreText[50];
+				sprintf_s(scoreText, 50, "Score: %d\n", score);
+				m_fpsTextObject.SetupText(-0.9f, 0.9f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f, 1.0f, scoreText);
+			}
 		}
 	}
-	
 
-
-	static float error = 0.0f;
-	error += 25.0f * dt;
-	if (error > 1.0f) { error -= 1.0f; 	fbCam.MouseRotate(1, 0);}
-		
 	fbCam.SetPosition(m_lights[0].GetPos());
 	m_demoObjects[NUM_DARGONS_TOTAL].SetTransMat(Engine::Mat4::Translation(m_lights[0].GetPos()));
 	m_demoObjects[NUM_DARGONS_TOTAL].SetRotMat(fbCam.GetRotMat());
@@ -354,7 +354,6 @@ void EngineDemo::Update(float dt)
 	fractalSeed.GetAddress()[1] += fsy.GetX() * dt; if (fractalSeed.GetY() < fsy.GetY()) { fractalSeed.GetAddress()[1] = fsy.GetY(); fsy.GetAddress()[0] *= -1.0f; } if (fractalSeed.GetY() > fsy.GetZ()) { fractalSeed.GetAddress()[1] = fsy.GetZ(); fsy.GetAddress()[0] *= -1.0f; }
 
 	vpm = Engine::Mat4::ViewPort((float)m_pWindow->width(), 0.0f, (float)m_pWindow->height(), 0.0f, RENDER_DISTANCE, m_perspective.GetNearDist());
-	Engine::CollisionTester::CalculateGrid();
 	m_lights[0].SetTransMat(Engine::Mat4::Translation(playerGraphicalObject.GetPos() + Engine::Vec3(0.0f, 15.0f, 0.0f)));
 }
 
